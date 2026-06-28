@@ -66,17 +66,21 @@ npm run eval -- path/to/dataset.csv
 
 **Legitimate email (GitHub 2FA) — correctly cleared:**
 
-<img src="docs/screenshots/summary-safe-email.png" width="600"/>
-
-The Evidence tab shows the data behind that verdict — an 18-year-old domain, SPF/DKIM/DMARC all present, a properly issued certificate:
-
-<img src="docs/screenshots/evidence-safe-email.png" width="600"/>
+<table><tr>
+<td><img src="docs/screenshots/summary-safe-email.png" width="320"/></td>
+<td><img src="docs/screenshots/evidence-safe-email.png" width="320"/></td>
+</tr>
+<tr><td>Summary tab</td><td>Evidence tab — 18-year-old domain, SPF/DKIM/DMARC all present</td></tr>
+</table>
 
 **Test phishing link (`paypal-online.de`) — correctly flagged:**
 
-<img src="docs/screenshots/summary-phishing-link.png" width="600"/>
-
-<img src="docs/screenshots/links-phishing-link.png" width="600"/>
+<table><tr>
+<td><img src="docs/screenshots/summary-phishing-link.png" width="320"/></td>
+<td><img src="docs/screenshots/links-phishing-link.png" width="320"/></td>
+</tr>
+<tr><td>Summary tab</td><td>Links tab</td></tr>
+</table>
 
 ---
 
