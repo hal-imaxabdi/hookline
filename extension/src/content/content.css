@@ -1,0 +1,11 @@
+/**
+ * Hookline Content Script CSS
+ *
+ * Injected into Gmail pages.
+ * Phase 3 will add tooltip and overlay styles here.
+ */
+
+/* Hookline link hover tooltip — Phase 3 */
+.hookline-tooltip {
+  display: none; /* Activated in Phase 3 */
+}

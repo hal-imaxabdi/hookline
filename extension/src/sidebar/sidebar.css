@@ -1,0 +1,140 @@
+/* Hookline Sidebar — Global Styles */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Variables from Design Tokens ────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg-base: #0D0E14;
+  --bg-surface: #13141C;
+  --bg-elevated: #1A1B26;
+  --bg-glass: rgba(255, 255, 255, 0.04);
+  --bg-glass-border: rgba(255, 255, 255, 0.08);
+
+  /* Brand */
+  --brand-purple: #7C5CFC;
+  --brand-purple-light: #9B7FF8;
+  --brand-blue: #4B8BF5;
+
+  /* Risk */
+  --risk-high: #E85454;
+  --risk-high-bg: rgba(232, 84, 84, 0.12);
+  --risk-high-border: rgba(232, 84, 84, 0.25);
+  --risk-medium: #E8A54A;
+  --risk-medium-bg: rgba(232, 165, 74, 0.12);
+  --risk-medium-border: rgba(232, 165, 74, 0.25);
+  --risk-low: #4CAF82;
+  --risk-low-bg: rgba(76, 175, 130, 0.12);
+  --risk-low-border: rgba(76, 175, 130, 0.25);
+
+  /* Text */
+  --text-primary: #F0F1F5;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+
+  /* Border */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Typography */
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ── Base Reset ───────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--text-primary);
+  background-color: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#hookline-root {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Scrollbars ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* ── Monospace Values ─────────────────────────────────────────────────────── */
+.mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* ── Glass Surface ────────────────────────────────────────────────────────── */
+.glass {
+  background: var(--bg-glass);
+  border: 1px solid var(--bg-glass-border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Animations ───────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 1.5s ease-in-out infinite;
+}
+
+/* ── Evidence Severity ────────────────────────────────────────────────────── */
+.evidence-high    { color: var(--risk-high); }
+.evidence-medium  { color: var(--risk-medium); }
+.evidence-low     { color: var(--text-secondary); }
+
+/* ── Status Badges ────────────────────────────────────────────────────────── */
+.badge-fail    { color: var(--risk-high); }
+.badge-missing { color: var(--risk-medium); }
+.badge-pass    { color: var(--risk-low); }
+.badge-unknown { color: var(--text-muted); }
