@@ -1,46 +1,45 @@
 # Hookline
 
-Hookline is a Chrome extension that checks Gmail emails and URLs for common phishing indicators — typosquatting, brand impersonation, suspicious domains, mismatched links — and shows *why* it flagged something instead of just giving a red/green verdict.
+A Chrome extension that checks Gmail emails and URLs for phishing indicators — typosquatting, brand impersonation, homoglyphs, suspicious domains, mismatched links — and explains *why* it flagged something instead of just giving a score.
 
-It's a personal/portfolio project, not a production security tool. It catches a meaningful share of clearly lexical phishing patterns and explains its reasoning, but it has real limitations described honestly below.
+> **Disclaimer:** Personal project. Will miss real attacks and occasionally flag legitimate sites. Not a substitute for proper security tooling.
 
 ---
 
-## What it actually does
+## What it checks
 
-**On a webpage / pasted URL**, Hookline checks the domain for:
-- Typosquatting (`paypa1.com`, `gmaul.com` — leetspeak, fat-finger, and edit-distance matches against ~24 commonly-impersonated brands)
-- Homoglyph attacks (e.g. a Cyrillic "а" standing in for a Latin "a")
+**Any URL / webpage:**
+- Typosquatting against ~24 commonly-impersonated brands (leetspeak, fat-finger, edit-distance)
+- Homoglyph attacks (e.g. Cyrillic "а" standing in for Latin "a")
 - Brand names embedded in a domain that isn't the real one (`amazon-security-update.net`)
 - Suspicious TLDs, IP-address hosts, excessive subdomains, unusually long/hyphenated domains
-- Domain age, registrar, and SSL certificate type — **only when the local backend is running** (see below)
+- Domain age, registrar, SSL certificate type — *requires local backend (see Setup)*
 
-**On a Gmail email**, Hookline additionally checks:
+**Gmail emails (additionally):**
 - Sender vs. Reply-To mismatch
 - Urgency/pressure language ("verify your account within 24 hours")
 - Credential-harvesting phrasing ("enter your password to continue")
-- Every link in the email body, individually, for the same domain-level checks above plus a same-organization comparison against the sender's domain
+- Every link in the body, individually, with same-org comparison against the sender's domain
 
-Every flag comes with a plain-language reason, shown in the **Evidence** tab — not just a score.
+Every flag shows a plain-language reason in the **Evidence** tab — not just a score.
+
+<details>
+<summary><strong>What it does NOT do</strong></summary>
+
+- **Does not visit the destination page** — all detection is lexical (domain/URL pattern matching) plus optional WHOIS/DNS/SSL lookups; it never fetches the link to see what's there
+- **No deny-list or threat-intel feed** — no Safe Browsing / VirusTotal integration; a brand-new malicious domain with no typosquatting pattern can slip through
+- **DKIM checking is best-effort** — probes common selector names via DNS; reports "unknown" if none match, not "missing" — it genuinely can't tell either way without the actual signed message
+- **Gmail web only** — no Outlook, no other mail client, no mobile
+- **Depends on Gmail's current DOM** — Gmail doesn't expose a public API, so Hookline reads the rendered page directly; if Google changes their markup, extraction can silently break until selectors are updated (happened once during development)
+- **Backend is local and optional** — without it you still get all lexical checks, but no domain age, registrar, or SSL data
+
+</details>
 
 ---
 
-## What it does NOT do
+## Performance
 
-Being upfront about this matters more than the feature list:
-
-- **It does not browse or fetch the destination page.** All detection is lexical (domain/URL pattern matching) plus optional WHOIS/DNS/SSL lookups. It never visits the link to see what's actually there.
-- **It does not check a deny-list or any threat-intel feed.** There's no Safe Browsing / VirusTotal integration. A brand-new malicious domain with no typosquatting pattern can slip through.
-- **DKIM checking is best-effort and often inconclusive.** Hookline probes a handful of common DKIM selector names via DNS, since the real selector used by a sender can't be discovered without a signed message. If none of the common ones match, it reports "unknown," not "missing" — it genuinely doesn't know either way.
-- **It only works on Gmail's web interface.** No Outlook, no other mail client, no mobile.
-- **It depends on Gmail's current DOM structure.** Gmail doesn't have a public API for this, so Hookline reads the rendered page directly. If Google changes their markup, extraction can silently break until selectors are updated — this happened during development and is documented in [Future Improvements](#future-improvements).
-- **The backend is local and optional.** Without it running, you still get all lexical checks (typosquatting, homoglyphs, brand impersonation, suspicious patterns), but no domain age, registrar, or SSL data.
-
----
-
-## Measured performance
-
-I ran the detection engine against a public Kaggle phishing-URL dataset (~550k labeled URLs) using the eval harness included in `extension/eval/`, on a balanced random sample of 50,000 URLs (25k phishing / 25k legitimate):
+Evaluated against a public Kaggle phishing-URL dataset — balanced 50k sample (25k phishing / 25k legitimate), lexical engine only:
 
 | Metric | Result |
 |---|---|
@@ -50,13 +49,12 @@ I ran the detection engine against a public Kaggle phishing-URL dataset (~550k l
 | Accuracy | 64.0% |
 | F1 score | 0.528 |
 
-A few things worth being clear about with these numbers:
+A few notes on these numbers:
+- **Lexical engine only** — no backend WHOIS/DNS/SSL enrichment (impractical to run against 50k domains with public rate limits). The live extension with the backend running performs better on individual emails.
+- The 40.5% recall reflects that many phishing URLs in datasets are hosted on compromised legitimate domains — outside what pure lexical analysis can catch.
+- **The 12.7% false-positive rate is the most actionable number** and the main thing to improve next.
 
-- This measures the **lexical engine only** — no backend WHOIS/DNS/SSL enrichment, since running that against 50,000 domains isn't realistic with public rate limits. The live extension, with the backend running, performs better than this on individual emails because it has more signals available.
-- A 40.5% detection rate sounds modest, and it is — this is a domain/URL-pattern matcher, not a full threat-intelligence system. A large share of the dataset's "bad" URLs are phishing pages hosted on otherwise-unremarkable domains (compromised legitimate sites, generic hosting), which pure lexical analysis isn't designed to catch.
-- A 12.7% false-positive rate is high enough to matter and is the main thing I'd want to improve next — see below.
-
-You can reproduce this yourself:
+Reproduce it yourself:
 ```bash
 cd extension
 npm run eval -- path/to/dataset.csv
@@ -66,52 +64,29 @@ npm run eval -- path/to/dataset.csv
 
 ## Screenshots
 
-**A real, legitimate email (GitHub 2FA code) — correctly cleared:**
+<details>
+<summary><strong>Legitimate email (GitHub 2FA) — correctly cleared</strong></summary>
 
 ![Summary tab showing a safe verdict](docs/screenshots/summary-safe-email.png)
 
-The Evidence tab shows the actual data behind that verdict — an 18-year-old domain, SPF/DKIM/DMARC all present, a properly issued certificate:
-
 ![Evidence tab showing domain and authentication details](docs/screenshots/evidence-safe-email.png)
 
-**A test phishing link (`paypal-online.de`) sent to my own inbox — correctly flagged:**
+</details>
+
+<details>
+<summary><strong>Test phishing link (paypal-online.de) — correctly flagged</strong></summary>
 
 ![Summary tab showing a high-risk verdict](docs/screenshots/summary-phishing-link.png)
 
 ![Links tab showing the flagged link](docs/screenshots/links-phishing-link.png)
 
----
-
-## Tech stack
-
-- **Extension UI:** React, TypeScript, Tailwind CSS, Chrome Manifest V3 (side panel)
-- **Content script:** reads Gmail's rendered DOM to extract subject, sender, reply-to, body text, and links
-- **Background service worker:** runs the analysis, persists results in `chrome.storage.session` so they survive the service worker going idle
-- **Backend (optional, local only):** Python + FastAPI, does RDAP (domain registration), DNS (SPF/DKIM/DMARC, MX, A records), and SSL certificate inspection
+</details>
 
 ---
 
-## Project structure
+## Setup
 
-```text
-hookline/
-├── extension/
-│   ├── src/
-│   │   ├── background/      # service worker — analysis + caching
-│   │   ├── content/         # Gmail DOM extraction
-│   │   ├── shared/          # urlAnalyzer, emailAnalyzer, riskEngine, detection rules — pure, unit-tested logic
-│   │   └── sidebar/         # React UI (Summary / Evidence / Links tabs)
-│   ├── eval/                # dataset evaluation harness
-│   └── tests/                # unit tests for the analyzers
-├── backend/                 # FastAPI domain-intelligence service
-└── docs/
-```
-
----
-
-## Getting started
-
-### Backend (optional — gives domain age, registrar, SSL data)
+### Backend (optional — adds domain age, registrar, SSL data)
 
 ```bash
 cd backend
@@ -122,7 +97,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-Check it's up: open `http://localhost:8000/health` — should return `{"status":"ok"}`.
+Verify it's running: `http://localhost:8000/health` → `{"status":"ok"}`
 
 ### Extension
 
@@ -132,27 +107,53 @@ npm install
 npm run build
 ```
 
-Then in Chrome: `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select `extension/dist`.
+In Chrome: `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select `extension/dist`
 
 Open Gmail, open an email, click the Hookline icon in the toolbar.
 
 ---
 
-## Future improvements
+## Tech stack
 
-Roughly in order of what would actually move the needle:
-
-- **Reduce the false-positive rate.** 12.7% is the most actionable number above — worth digging into which specific check is overfiring most often on the dataset.
-- **Re-verify Gmail selectors periodically.** Since extraction depends on Gmail's current DOM and Gmail has been incrementally rolling out a rebuilt frontend, the CSS selectors used in `content.ts` may need updates again as more accounts get migrated.
-- **DKIM selector detection is genuinely limited** by DNS alone; a more reliable signal would require parsing a real `DKIM-Signature` header from the message source, which Gmail doesn't expose without additional permissions.
-- **No persistence across sessions for past scans** — there's no history/log of previously analyzed emails, just the current one.
-- **Single-language detection rules** — the urgency/credential-harvesting language patterns are English-only.
+| Layer | Stack |
+|---|---|
+| Extension UI | React, TypeScript, Tailwind CSS, Chrome Manifest V3 (side panel) |
+| Content script | Reads Gmail's rendered DOM to extract subject, sender, reply-to, body, links |
+| Background worker | Runs analysis, persists results in `chrome.storage.session` |
+| Backend (optional) | Python + FastAPI — RDAP, DNS (SPF/DKIM/DMARC), SSL inspection |
 
 ---
 
-## Disclaimer
+## Project structure
 
-Hookline is an educational/portfolio project. Its output is a set of indicators based on lexical pattern-matching and optional DNS/WHOIS lookups — not a verified security judgment. It will miss real phishing attempts and will occasionally flag legitimate sites. Don't rely on it as your only line of defense.
+```
+hookline/
+├── extension/
+│   ├── src/
+│   │   ├── background/   # service worker — analysis + caching
+│   │   ├── content/      # Gmail DOM extraction
+│   │   ├── shared/       # urlAnalyzer, emailAnalyzer, riskEngine, detection rules — pure, unit-tested
+│   │   └── sidebar/      # React UI (Summary / Evidence / Links tabs)
+│   ├── eval/             # dataset evaluation harness
+│   └── tests/            # unit tests for the analyzers
+├── backend/              # FastAPI domain-intelligence service
+└── docs/
+```
+
+---
+
+<details>
+<summary><strong>Future improvements</strong></summary>
+
+Roughly in order of what would move the needle most:
+
+- **Reduce the false-positive rate** — 12.7% is high enough to matter; worth auditing which specific check overfires most often on the dataset
+- **Re-verify Gmail selectors periodically** — since Gmail has been rolling out a rebuilt frontend, the CSS selectors in `content.ts` may need updates again as more accounts migrate
+- **Better DKIM detection** — DNS-only probing is fundamentally limited; parsing a real `DKIM-Signature` header from the message source would be more reliable but requires additional permissions
+- **Scan history** — no persistence across sessions; only the currently open email is tracked
+- **Multi-language rules** — urgency and credential-harvesting patterns are English-only
+
+</details>
 
 ---
 
