@@ -51,7 +51,3 @@ Tested on public phishing and job-posting datasets: 24–26% of phishing URLs de
 ## Limitations
 
 Hookline uses rules, not machine learning, so it will miss some scams. This is especially true for brand-new domains with nothing suspicious in their name. Gmail's page layout can change without notice, and the language checks are English-only.
-
-## License
-
-MIT
