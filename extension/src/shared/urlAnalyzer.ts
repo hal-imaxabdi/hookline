@@ -1,5 +1,6 @@
-import { UrlAnalysisResult, EvidenceItem, RiskLevel, Confidence, DomainInfo } from "./types";
-import { scoreEvidence } from "./riskEngine";
+import type { UrlAnalysisResult, EvidenceItem, DomainInfo, CategoryResult, RiskLevel, Confidence } from "./types";
+import { scoreEvidence, makeEvidence, type ScoreOptions } from "./riskEngine";
+import type { RuleId } from "./ruleRegistry";
 import {
   KNOWN_BRANDS,
   SUSPICIOUS_TLDS,
@@ -7,271 +8,323 @@ import {
   CONFUSABLES,
   KEYBOARD_ADJACENCY,
   LEET_MAP,
-  MULTI_PART_TLDS,
 } from "./detectionRules";
+import {
+  getRegistrableDomain,
+  subdomainDepth,
+  getRegistrableLabel,
+  BRAND_LABELS,
+  toUnicodeHost,
+  getTld,
+  isIpAddress,
+  isOfficialBrandDomain,
+  unwrapRedirector,
+  DEEP_SUBDOMAIN_MIN,
+  findBrandInHost,
+  type BrandHit,
+} from "./domainUtils";
+import { isAllowlisted } from "./allowlist";
+
+export interface AnalyzeUrlOptions extends Pick<ScoreOptions, "disabledRules"> {
+  /**
+   * False when the input had no scheme (bare "example.com/path", as in many
+   * datasets). The http/https check is skipped instead of guessing.
+   */
+  schemeKnown?: boolean;
+  /** Apply the top-sites allow-list (default true). */
+  useAllowlist?: boolean;
+}
 
 // ─── Entry Point ────────────────────────────────────────────────────────────
 
-export function analyzeUrl(rawUrl: string): UrlAnalysisResult {
+/** Parse + collect raw evidence without scoring. Used by the eval harness. */
+export function collectUrlEvidence(
+  rawUrl: string,
+  opts: AnalyzeUrlOptions = {}
+): { url: URL; domain: string; evidence: EvidenceItem[] } | { error: string } {
   let url: URL;
   try {
     url = new URL(rawUrl);
   } catch {
-    return errorResult(rawUrl, "Invalid URL — could not parse.");
+    return { error: "Invalid URL — could not parse." };
+  }
+
+  const evidence: EvidenceItem[] = [];
+
+  // Redirect wrappers (google.com/url?q=…) — analyze the real destination.
+  const inner = unwrapRedirector(url);
+  if (inner) {
+    evidence.push(
+      makeEvidence(
+        "URL_REDIRECTOR",
+        "Link is wrapped in a redirect service",
+        `This link goes through ${url.hostname} and then on to ${inner.hostname}. Hookline analyzed the final destination.`,
+        `Wrapper: ${url.hostname} → ${inner.hostname}`
+      )
+    );
+    url = inner;
   }
 
   const domain = url.hostname.toLowerCase();
-  const tld = getTld(domain);
-  const path = url.pathname;
-  const evidence: EvidenceItem[] = [];
-
-  // ── Run checks ─────────────────────────────────────────────────────────
-
-  const isOfficial = isOfficialDomain(domain);
+  const isOfficial = isOfficialBrandDomain(domain);
 
   checkBrandImpersonation(domain, isOfficial, evidence);
   checkTyposquatting(domain, isOfficial, evidence);
   checkHomoglyphs(domain, isOfficial, evidence);
-  checkSuspiciousTld(tld, evidence);
-  checkSuspiciousPath(path, evidence);
-  checkUrlStructure(url, domain, evidence);
+  checkSuspiciousTld(getTld(domain), evidence);
+  checkSuspiciousPath(url.pathname, isOfficial, evidence);
+  checkUrlStructure(url, domain, opts.schemeKnown !== false || inner !== null, evidence);
   checkIpAddress(domain, evidence);
   checkExcessiveSubdomains(domain, evidence);
 
-  // ── Compute verdict ─────────────────────────────────────────────────────
+  return { url, domain, evidence };
+}
 
-  const { verdict, confidence, riskScore } = scoreEvidence(evidence);
+export function analyzeUrl(rawUrl: string, opts: AnalyzeUrlOptions = {}): UrlAnalysisResult {
+  const collected = collectUrlEvidence(rawUrl, opts);
+  if ("error" in collected) return errorResult(rawUrl, collected.error);
+
+  const { domain, evidence } = collected;
+  const allowlisted = opts.useAllowlist !== false && isAllowlisted(domain);
+  const scored = scoreEvidence(evidence, { disabledRules: opts.disabledRules, allowlisted });
 
   return {
     url: rawUrl,
     domain,
-    verdict,
-    confidence,
-    riskScore,
-    evidenceScore: evidence.length,
-    evidenceMax: 8,
-    evidence,
-    domainInfo: null, // Phase 7 populates this
+    registrableDomain: getRegistrableDomain(domain),
+    allowlisted,
+    verdict: scored.verdict,
+    confidence: scored.confidence,
+    riskScore: scored.riskScore,
+    evidence: scored.active,
+    suppressedEvidence: scored.suppressed,
+    category: scored.category,
+    domainInfo: null,
     analyzedAt: new Date().toISOString(),
-    // Phase 4 extras (rendered by DetailsTab)
-    tld,
-    path,
-    protocol: url.protocol,
-    hasSubdomain: getSubdomain(domain) !== "",
-    subdomain: getSubdomain(domain),
-    paramCount: url.searchParams ? [...url.searchParams.keys()].length : 0,
-  } as UrlAnalysisResult & Record<string, unknown>;
-}
-
-// ─── Domain-info enrichment (Phase 7 + 9) ───────────────────────────────────
-// Folds backend WHOIS/DNS data into a finished local analysis, then re-scores
-// with the Phase 9 risk engine. Works for BOTH url and email results.
-//
-//   - domain age (new domain) is added in every context.
-//   - SPF / DMARC gaps are added only in EMAIL context (they're email-auth
-//     signals, irrelevant to judging a plain website) and kept low-severity so
-//     they nudge the score without flipping a safe domain on their own.
-
-export function enrichWithDomainInfo<
-  T extends {
-    evidence: EvidenceItem[];
-    verdict: RiskLevel;
-    confidence: Confidence;
-    riskScore?: number;
-    domainInfo: DomainInfo | null;
-  }
->(result: T, info: DomainInfo, opts?: { emailContext?: boolean }): T {
-  const evidence = [...result.evidence];
-
-  if (info.isNewDomain && info.createdDaysAgo != null) {
-    const veryNew = info.createdDaysAgo < 30;
-    evidence.push({
-      type: "domain_age",
-      severity: veryNew ? "high" : "medium",
-      title: veryNew ? "Very newly registered domain" : "Recently registered domain",
-      description: `This domain was registered ${info.createdDaysAgo} day${
-        info.createdDaysAgo === 1 ? "" : "s"
-      } ago. Phishing domains are almost always brand new, so a registration this recent is a strong risk signal.`,
-      detail: `Created ${info.createdDate ?? "unknown"} · Registrar: ${info.registrar}`,
-    });
-  }
-
-  if (opts?.emailContext) {
-    if (info.spfStatus === "missing") {
-      evidence.push({
-        type: "spf_fail",
-        severity: "low",
-        title: "No SPF record",
-        description: "The sender domain publishes no SPF record, so anyone can forge mail from it without failing this check. Established senders almost always have one.",
-        detail: `Domain: ${info.domain}`,
-      });
-    }
-    if (info.dmarcStatus === "missing") {
-      evidence.push({
-        type: "no_dmarc",
-        severity: "low",
-        title: "No DMARC record",
-        description: "The sender domain has no DMARC policy, meaning spoofed mail is not actively rejected. Brands that send real email almost always publish one.",
-        detail: `Domain: ${info.domain}`,
-      });
-    }
-  }
-
-  const { verdict, confidence, riskScore } = scoreEvidence(evidence);
-
-  return {
-    ...result,
-    evidence,
-    domainInfo: info,
-    verdict,
-    confidence,
-    riskScore,
   };
 }
 
-// ─── Check: Brand Impersonation ─────────────────────────────────────────────
-// Domain contains a brand keyword but is not the official domain.
+// ─── Domain-info enrichment ──────────────────────────────────────────────────
+// Folds backend WHOIS/DNS data into a finished local analysis and re-scores.
+//   - domain age is added in every context.
+//   - SPF / DMARC gaps only in EMAIL context, low severity.
 
-function checkBrandImpersonation(
-  domain: string,
-  isOfficial: boolean,
-  evidence: EvidenceItem[]
-): void {
-  if (isOfficial) return;
-
-  for (const brand of KNOWN_BRANDS) {
-    const impersonates = brand.keywords.some((kw) =>
-      domain.includes(kw.toLowerCase())
-    );
-
-    if (impersonates) {
-      evidence.push({
-        type: "brand_impersonation",
-        severity: "high",
-        title: `Possible ${brand.brand} impersonation`,
-        description: `This domain embeds "${brand.brand}" branding but is not an official ${brand.brand} domain. Phishing sites often place brand names in the domain to look legitimate.`,
-        detail: `Domain: ${domain} | Official: ${brand.officialDomains[0]}`,
-      });
-      return; // One brand match is enough
-    }
-  }
+interface Enrichable {
+  evidence: EvidenceItem[];
+  suppressedEvidence: EvidenceItem[];
+  verdict: RiskLevel;
+  confidence: Confidence;
+  riskScore: number;
+  category: CategoryResult;
+  domainInfo: DomainInfo | null;
 }
 
-// ─── Check: Typosquatting (Phase 5) ─────────────────────────────────────────
-// Compares the registrable-domain *label* against each brand's label using
-// three escalating techniques: leetspeak folding, keyboard adjacency, and
-// Levenshtein edit distance.
+export function domainInfoEvidence(info: DomainInfo, emailContext: boolean): EvidenceItem[] {
+  const out: EvidenceItem[] = [];
+  if (info.isNewDomain && info.createdDaysAgo != null) {
+    const veryNew = info.createdDaysAgo < 30;
+    const days = info.createdDaysAgo;
+    out.push(
+      makeEvidence(
+        veryNew ? "DOMAIN_VERY_NEW" : "DOMAIN_NEW",
+        veryNew ? "Very newly registered domain" : "Recently registered domain",
+        `This domain was registered ${days} day${days === 1 ? "" : "s"} ago. Scam domains are almost always brand new.`,
+        `Created ${info.createdDate ?? "unknown"} · Registrar: ${info.registrar}`
+      )
+    );
+  }
+  if (emailContext) {
+    if (info.spfStatus === "missing") {
+      out.push(
+        makeEvidence(
+          "EMAIL_NO_SPF",
+          "No SPF record",
+          "The sender domain publishes no SPF record, so anyone can forge mail from it. Established senders almost always have one.",
+          `Domain: ${info.domain}`
+        )
+      );
+    }
+    if (info.dmarcStatus === "missing") {
+      out.push(
+        makeEvidence(
+          "EMAIL_NO_DMARC",
+          "No DMARC record",
+          "The sender domain has no DMARC policy, so spoofed mail is not actively rejected.",
+          `Domain: ${info.domain}`
+        )
+      );
+    }
+  }
+  return out;
+}
 
-function checkTyposquatting(
-  domain: string,
-  isOfficial: boolean,
-  evidence: EvidenceItem[]
-): void {
+export function rescore<T extends Enrichable>(
+  result: T,
+  extra: EvidenceItem[],
+  opts: { allowlisted: boolean; disabledRules?: ReadonlySet<RuleId> }
+): T {
+  const all = [...result.evidence, ...result.suppressedEvidence, ...extra];
+  const scored = scoreEvidence(all, opts);
+  return {
+    ...result,
+    evidence: scored.active,
+    suppressedEvidence: scored.suppressed,
+    verdict: scored.verdict,
+    confidence: scored.confidence,
+    riskScore: scored.riskScore,
+    category: scored.category,
+  };
+}
+
+export function enrichWithDomainInfo<T extends Enrichable>(
+  result: T,
+  info: DomainInfo,
+  opts: { emailContext?: boolean; allowlisted?: boolean; disabledRules?: ReadonlySet<RuleId> } = {}
+): T {
+  const extra = domainInfoEvidence(info, opts.emailContext === true);
+  const rescored = rescore(result, extra, {
+    allowlisted: opts.allowlisted === true,
+    disabledRules: opts.disabledRules,
+  });
+  return { ...rescored, domainInfo: info };
+}
+
+// ─── Check: Brand Impersonation ─────────────────────────────────────────────
+
+function checkBrandImpersonation(domain: string, isOfficial: boolean, evidence: EvidenceItem[]): void {
+  if (isOfficial) return;
+  const hit = findBrandInDomain(domain);
+  if (!hit) return;
+  evidence.push(
+    makeEvidence(
+      "URL_BRAND_IN_DOMAIN",
+      `Possible ${hit.brand} impersonation`,
+      `This domain contains "${hit.keyword}" but is not an official ${hit.brand} domain. Phishing sites often put brand names in the domain to look legitimate.`,
+      `Domain: ${domain} | Official: ${hit.official}`
+    )
+  );
+}
+
+/** Find a brand keyword in a hostname. Exported for the email link check. */
+export function findBrandInDomain(domain: string): BrandHit | null {
+  return findBrandInHost(domain);
+}
+
+// ─── Check: Typosquatting ───────────────────────────────────────────────────
+// C3/C7: compare the registrable label against the registrable labels of
+// official brand domains, with length guards so short dictionary words (live,
+// meta, citi, bing, apply≈apple) don't match half the web:
+//   leetspeak fold   — brand label ≥ 4
+//   keyboard slip    — both labels ≥ 5 (and the differing keys are adjacent)
+//   1 edit           — both labels ≥ 6
+//   2 edits          — brand label ≥ 8
+
+export const TYPO_MIN_LEN_KEYBOARD = 5;
+export const TYPO_MIN_LEN_EDIT1 = 6;
+export const TYPO_MIN_LEN_EDIT2 = 8;
+
+function checkTyposquatting(domain: string, isOfficial: boolean, evidence: EvidenceItem[]): void {
   if (isOfficial) return;
 
   const label = getRegistrableLabel(domain);
-  if (label.length < 4) return; // too short to judge reliably
+  if (label.length < 4) return;
 
-  for (const brand of KNOWN_BRANDS) {
-    for (const officialDomain of brand.officialDomains) {
-      const officialLabel = officialDomain.split(".")[0];
-      if (officialLabel.length < 4) continue;
-      if (label === officialLabel) continue; // identical label, different TLD → brand check covers it
+  for (const { brand, label: officialLabel, official: officialDomain } of BRAND_LABELS) {
+    if (officialLabel.length < 4) continue;
+    if (label === officialLabel) continue;
 
-      // 1) Leetspeak / visual ASCII substitution (paypa1 → paypal, rnicrosoft → micro…)
-      const deleeted = deLeet(label);
-      if (deleeted === officialLabel) {
-        evidence.push({
-          type: "typosquatting",
-          severity: "high",
-          title: `Character-substitution typosquat of ${officialDomain}`,
-          description: `This domain swaps look-alike ASCII characters (digits or merged letters) to imitate ${brand.brand}. Normalized, "${label}" reads as "${officialLabel}".`,
-          detail: `${label} → ${deleeted} = ${officialLabel}`,
-        });
-        return;
-      }
+    const deleeted = deLeet(label);
+    if (deleeted === officialLabel) {
+      evidence.push(
+        makeEvidence(
+          "URL_TYPOSQUAT_LEET",
+          `Character-substitution typosquat of ${officialDomain}`,
+          `This domain swaps look-alike characters to imitate ${brand}. Normalized, "${label}" reads as "${officialLabel}".`,
+          `${label} → ${deleeted} = ${officialLabel}`
+        )
+      );
+      return;
+    }
 
-      // 2) Keyboard-adjacent single-key slip (gmaul → gmail)
-      const kb = keyboardAdjacentSub(label, officialLabel);
-      if (kb) {
-        evidence.push({
-          type: "typosquatting",
-          severity: "high",
-          title: `Keyboard-typo squat of ${officialDomain}`,
-          description: `"${label}" differs from ${brand.brand}'s "${officialLabel}" by a single neighbouring key — a classic fat-finger typosquat registered to catch mistyped traffic.`,
-          detail: `'${kb.from}' → '${kb.to}' (adjacent keys) vs ${officialLabel}`,
-        });
-        return;
-      }
+    if (label.length < TYPO_MIN_LEN_KEYBOARD || officialLabel.length < TYPO_MIN_LEN_KEYBOARD) continue;
 
-      // 3) Raw edit distance
-      const distance = levenshtein(label, officialLabel);
-      if (distance >= 1 && distance <= 2) {
-        evidence.push({
-          type: "typosquatting",
-          severity: distance === 1 ? "high" : "medium",
-          title: `Typosquatting — ${distance} character${distance > 1 ? "s" : ""} from ${officialDomain}`,
-          description: `This domain is within ${distance} edit${distance > 1 ? "s" : ""} of the official ${brand.brand} domain — close enough to fool a quick glance.`,
-          detail: `${label} vs ${officialLabel} (edit distance: ${distance})`,
-        });
-        return;
-      }
+    const kb = keyboardAdjacentSub(label, officialLabel);
+    if (kb) {
+      evidence.push(
+        makeEvidence(
+          "URL_TYPOSQUAT_KEYBOARD",
+          `Keyboard-typo squat of ${officialDomain}`,
+          `"${label}" differs from ${brand}'s "${officialLabel}" by a single neighbouring key — a classic fat-finger typosquat.`,
+          `'${kb.from}' → '${kb.to}' (adjacent keys) vs ${officialLabel}`
+        )
+      );
+      return;
+    }
+
+    if (label.length < TYPO_MIN_LEN_EDIT1 || officialLabel.length < TYPO_MIN_LEN_EDIT1) continue;
+    const maxDist = officialLabel.length >= TYPO_MIN_LEN_EDIT2 ? 2 : 1;
+    const distance = boundedLevenshtein(label, officialLabel, maxDist);
+    if (distance >= 1 && distance <= maxDist) {
+      evidence.push(
+        makeEvidence(
+          "URL_TYPOSQUAT_EDIT",
+          `Typosquatting — ${distance} character${distance > 1 ? "s" : ""} from ${officialDomain}`,
+          `This domain is within ${distance} edit${distance > 1 ? "s" : ""} of the official ${brand} domain — close enough to fool a quick glance.`,
+          `${label} vs ${officialLabel} (edit distance: ${distance})`,
+          distance === 1 ? "high" : "medium"
+        )
+      );
+      return;
     }
   }
 }
 
-// ─── Check: Homoglyphs (Phase 6) ────────────────────────────────────────────
-// Detects (a) punycode/IDN domains, (b) domains mixing writing systems, and
-// (c) confusable characters that fold to a known brand.
+// ─── Check: Homoglyphs ──────────────────────────────────────────────────────
 
-function checkHomoglyphs(
-  domain: string,
-  isOfficial: boolean,
-  evidence: EvidenceItem[]
-): void {
+function checkHomoglyphs(domain: string, isOfficial: boolean, evidence: EvidenceItem[]): void {
   if (isOfficial) return;
 
-  // (a) Punycode / IDN — encoded non-Latin characters
   if (domain.includes("xn--")) {
-    evidence.push({
-      type: "homoglyph",
-      severity: "medium",
-      title: "Punycode (IDN) domain",
-      description: "This domain is internationalized (xn--). Punycode can encode non-Latin characters that render as a look-alike of a familiar brand. Verify the decoded form before trusting it.",
-      detail: `Domain: ${domain}`,
-    });
+    evidence.push(
+      makeEvidence(
+        "URL_PUNYCODE",
+        "Punycode (IDN) domain",
+        "This domain is internationalized (xn--). Punycode can encode non-Latin characters that render as a look-alike of a familiar brand.",
+        `Domain: ${domain}`
+      )
+    );
   }
 
-  const { folded, swaps, scripts } = foldConfusables(domain);
+  // URL parsing turns "pаypal.com" into "xn--pypal-4ve.com"; decode first (C7).
+  const { folded, swaps, scripts } = foldConfusables(toUnicodeHost(domain));
 
-  // (b) Mixed-script label — Latin combined with another writing system
   const nonLatin = [...scripts].filter((s) => s !== "latin");
   if (scripts.has("latin") && nonLatin.length > 0) {
-    evidence.push({
-      type: "homoglyph",
-      severity: "high",
-      title: "Mixed-script domain (homoglyph attack)",
-      description: `This domain mixes Latin letters with ${nonLatin.join(", ")} characters that look identical in most fonts. Legitimate domains do not mix writing systems like this.`,
-      detail: swaps.length ? swaps.slice(0, 4).join(", ") : `Scripts: ${[...scripts].join(", ")}`,
-    });
+    evidence.push(
+      makeEvidence(
+        "URL_MIXED_SCRIPT",
+        "Mixed-script domain (homoglyph attack)",
+        `This domain mixes Latin letters with ${nonLatin.join(", ")} characters that look identical in most fonts.`,
+        swaps.length ? swaps.slice(0, 4).join(", ") : `Scripts: ${[...scripts].join(", ")}`
+      )
+    );
   }
 
   if (swaps.length === 0) return;
 
-  // (c) After folding confusables, does it match a known brand?
   const foldedReg = getRegistrableDomain(folded);
   const rawReg = getRegistrableDomain(domain);
-
   for (const brand of KNOWN_BRANDS) {
     for (const officialDomain of brand.officialDomains) {
       if (foldedReg === officialDomain && rawReg !== officialDomain) {
-        evidence.push({
-          type: "homoglyph",
-          severity: "high",
-          title: `Homoglyph impersonation of ${officialDomain}`,
-          description: `Using look-alike characters, this domain is crafted to appear as "${officialDomain}" (${brand.brand}) while actually resolving somewhere else.`,
-          detail: `Substitutions: ${swaps.slice(0, 4).join(", ")}`,
-        });
+        evidence.push(
+          makeEvidence(
+            "URL_HOMOGLYPH_BRAND",
+            `Homoglyph impersonation of ${officialDomain}`,
+            `Using look-alike characters, this domain is crafted to appear as "${officialDomain}" (${brand.brand}).`,
+            `Substitutions: ${swaps.slice(0, 4).join(", ")}`
+          )
+        );
         return;
       }
     }
@@ -282,162 +335,120 @@ function checkHomoglyphs(
 
 function checkSuspiciousTld(tld: string, evidence: EvidenceItem[]): void {
   if (!tld || !SUSPICIOUS_TLDS.has(tld)) return;
-
-  evidence.push({
-    type: "suspicious_tld",
-    severity: "medium",
-    title: `High-risk TLD: ${tld}`,
-    description: `The ${tld} top-level domain is heavily abused for phishing and spam. Legitimate businesses rarely use it.`,
-    detail: `TLD: ${tld}`,
-  });
+  evidence.push(
+    makeEvidence(
+      "URL_SUSPICIOUS_TLD",
+      `High-risk TLD: ${tld}`,
+      `The ${tld} top-level domain is heavily abused for phishing and spam. Not a verdict on its own.`,
+      `TLD: ${tld}`
+    )
+  );
 }
 
 // ─── Check: Suspicious Path ─────────────────────────────────────────────────
 
-function checkSuspiciousPath(path: string, evidence: EvidenceItem[]): void {
-  for (const { pattern, label } of SUSPICIOUS_PATH_PATTERNS) {
+function checkSuspiciousPath(path: string, _isOfficial: boolean, evidence: EvidenceItem[]): void {
+  for (const { pattern, label, ruleId } of SUSPICIOUS_PATH_PATTERNS) {
     if (pattern.test(path)) {
-      evidence.push({
-        type: "url_structure",
-        severity: "medium",
-        title: `Suspicious URL path: ${label}`,
-        description: `The URL path contains patterns commonly found on phishing landing pages designed to harvest credentials or impersonate legitimate services.`,
-        detail: `Path: ${path}`,
-      });
+      evidence.push(
+        makeEvidence(
+          ruleId,
+          `Suspicious URL path: ${label}`,
+          "The URL path contains patterns commonly found on phishing landing pages.",
+          `Path: ${path.slice(0, 120)}`
+        )
+      );
       return; // One path flag is enough
     }
   }
 }
 
-// ─── Check: URL Structure Anomalies ─────────────────────────────────────────
+// ─── Check: URL Structure ───────────────────────────────────────────────────
 
-function checkUrlStructure(url: URL, domain: string, evidence: EvidenceItem[]): void {
+function checkUrlStructure(url: URL, domain: string, schemeKnown: boolean, evidence: EvidenceItem[]): void {
   if (domain.length > 40) {
-    evidence.push({
-      type: "url_structure",
-      severity: "medium",
-      title: "Unusually long domain name",
-      description: `This domain is ${domain.length} characters long. Legitimate services use short, memorable names. Very long domains are a common phishing tactic.`,
-      detail: `Domain length: ${domain.length} characters`,
-    });
+    evidence.push(
+      makeEvidence(
+        "URL_LONG_DOMAIN",
+        "Unusually long domain name",
+        `This hostname is ${domain.length} characters long. Very long hostnames are a common phishing tactic.`,
+        `Domain length: ${domain.length} characters`
+      )
+    );
   }
 
-  const hyphenCount = (domain.match(/-/g) ?? []).length;
+  const hyphenCount = (toUnicodeHost(domain).match(/-/g) ?? []).length;
   if (hyphenCount >= 3) {
-    evidence.push({
-      type: "url_structure",
-      severity: "low",
-      title: `${hyphenCount} hyphens in domain`,
-      description: `Domains with many hyphens are often generated by phishing kits trying to look like official subdomains (e.g., "secure-login-account-verify.com").`,
-      detail: `Domain: ${domain}`,
-    });
+    evidence.push(
+      makeEvidence(
+        "URL_MANY_HYPHENS",
+        `${hyphenCount} hyphens in domain`,
+        `Domains with many hyphens are often generated by phishing kits (e.g., "secure-login-account-verify.com").`,
+        `Domain: ${domain}`
+      )
+    );
   }
 
-  if (url.protocol === "http:") {
-    evidence.push({
-      type: "ssl_missing",
-      severity: "medium",
-      title: "No HTTPS — unencrypted connection",
-      description: "This URL uses plain HTTP, meaning data is transmitted without encryption. All legitimate login and payment pages use HTTPS.",
-      detail: `Protocol: ${url.protocol}`,
-    });
+  if (schemeKnown && url.protocol === "http:") {
+    evidence.push(
+      makeEvidence(
+        "URL_NO_HTTPS",
+        "No HTTPS — unencrypted connection",
+        "This URL uses plain HTTP. All legitimate login and payment pages use HTTPS.",
+        `Protocol: ${url.protocol}`
+      )
+    );
   }
 
   if (/%[0-9a-f]{2}/i.test(domain)) {
-    evidence.push({
-      type: "url_structure",
-      severity: "medium",
-      title: "URL-encoded characters in domain",
-      description: "The domain contains percent-encoded characters, which can disguise the true destination of a link.",
-      detail: `Domain: ${domain}`,
-    });
+    evidence.push(
+      makeEvidence(
+        "URL_ENCODED_HOST",
+        "URL-encoded characters in domain",
+        "The domain contains percent-encoded characters, which can disguise the true destination.",
+        `Domain: ${domain}`
+      )
+    );
   }
 }
-
-// ─── Check: IP Address Domain ───────────────────────────────────────────────
 
 function checkIpAddress(domain: string, evidence: EvidenceItem[]): void {
-  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(domain)) {
-    evidence.push({
-      type: "url_structure",
-      severity: "high",
-      title: "IP address used instead of domain name",
-      description: "This URL uses a raw IP address instead of a domain name. Legitimate websites use domain names. IP-based URLs are a strong phishing indicator.",
-      detail: `IP: ${domain}`,
-    });
+  if (isIpAddress(domain)) {
+    evidence.push(
+      makeEvidence(
+        "URL_IP_HOST",
+        "IP address used instead of domain name",
+        "This URL uses a raw IP address instead of a domain name — a strong phishing indicator.",
+        `IP: ${domain}`
+      )
+    );
   }
 }
-
-// ─── Check: Excessive Subdomains ────────────────────────────────────────────
 
 function checkExcessiveSubdomains(domain: string, evidence: EvidenceItem[]): void {
-  const parts = domain.split(".");
-  if (parts.length > 4) {
-    evidence.push({
-      type: "url_structure",
-      severity: "medium",
-      title: `${parts.length - 2} subdomains in URL`,
-      description: `This URL has an unusually deep subdomain structure. Phishing sites use this to place a legitimate-looking brand name as a subdomain (e.g., paypal.com.evil.xyz).`,
-      detail: `Domain: ${domain}`,
-    });
+  if (isIpAddress(domain)) return;
+  const depth = subdomainDepth(domain);
+  if (depth >= DEEP_SUBDOMAIN_MIN) {
+    evidence.push(
+      makeEvidence(
+        "URL_DEEP_SUBDOMAINS",
+        `${depth} subdomain levels in URL`,
+        "Deep subdomain chains are used to place a legitimate-looking brand on the left (e.g., paypal.com.evil.xyz).",
+        `Domain: ${domain}`
+      )
+    );
   }
 }
 
-// ─── Helpers: Domain Parsing ─────────────────────────────────────────────────
+// ─── Helpers: typosquatting ─────────────────────────────────────────────────
 
-function getTld(domain: string): string {
-  const parts = domain.split(".");
-  return parts.length >= 2 ? `.${parts[parts.length - 1]}` : "";
-}
-
-// Registrable domain: SLD + public suffix, e.g. "amazon.co.uk", "paypal.com".
-export function getRegistrableDomain(domain: string): string {
-  const parts = domain.split(".");
-  if (parts.length <= 2) return domain;
-  const lastTwo = parts.slice(-2).join(".");
-  if (MULTI_PART_TLDS.has(lastTwo) && parts.length >= 3) {
-    return parts.slice(-3).join(".");
-  }
-  return lastTwo;
-}
-
-// The brand label = first label of the registrable domain ("paypal" of paypal.co.uk).
-function getRegistrableLabel(domain: string): string {
-  return getRegistrableDomain(domain).split(".")[0] ?? "";
-}
-
-function getSubdomain(domain: string): string {
-  const reg = getRegistrableDomain(domain);
-  if (domain === reg) return "";
-  return domain.slice(0, domain.length - reg.length - 1);
-}
-
-function isOfficialDomain(domain: string): boolean {
-  for (const brand of KNOWN_BRANDS) {
-    for (const d of brand.officialDomains) {
-      if (domain === d || domain.endsWith(`.${d}`)) return true;
-    }
-  }
-  return false;
-}
-
-// ─── Helpers: Phase 5 (typosquatting) ───────────────────────────────────────
-
-// Fold leetspeak / merged-letter tricks back to plain letters.
 function deLeet(label: string): string {
   let out = label.replace(/rn/g, "m").replace(/vv/g, "w");
-  for (const [from, to] of Object.entries(LEET_MAP)) {
-    out = out.split(from).join(to);
-  }
+  for (const [from, to] of Object.entries(LEET_MAP)) out = out.split(from).join(to);
   return out;
 }
 
-// Returns the swapped chars if a and b are equal length and differ at exactly
-// one position where the two characters are physically adjacent keys.
-function keyboardAdjacentSub(
-  a: string,
-  b: string
-): { from: string; to: string } | null {
+function keyboardAdjacentSub(a: string, b: string): { from: string; to: string } | null {
   if (a.length !== b.length) return null;
   let diffIndex = -1;
   let diffs = 0;
@@ -455,25 +466,29 @@ function keyboardAdjacentSub(
   return null;
 }
 
-function levenshtein(a: string, b: string): number {
-  const m = a.length;
+/** Levenshtein distance, returning max+1 as soon as it must exceed `max`. */
+export function boundedLevenshtein(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
   const n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, (_, i) =>
-    Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
-  );
-  for (let i = 1; i <= m; i++) {
+  let prev = new Array<number>(n + 1);
+  let cur = new Array<number>(n + 1);
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    cur[0] = i;
+    let rowMin = cur[0];
     for (let j = 1; j <= n; j++) {
-      if (a[i - 1] === b[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1];
-      } else {
-        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-      }
+      cur[j] = a[i - 1] === b[j - 1]
+        ? prev[j - 1]
+        : 1 + Math.min(prev[j], cur[j - 1], prev[j - 1]);
+      if (cur[j] < rowMin) rowMin = cur[j];
     }
+    if (rowMin > max) return max + 1;
+    [prev, cur] = [cur, prev];
   }
-  return dp[m][n];
+  return prev[n];
 }
 
-// ─── Helpers: Phase 6 (homoglyphs) ──────────────────────────────────────────
+// ─── Helpers: homoglyphs ────────────────────────────────────────────────────
 
 type ScriptName = "latin" | "cyrillic" | "greek" | "armenian" | "other";
 
@@ -483,29 +498,22 @@ function scriptOf(ch: string): ScriptName {
   if (c >= 0x0370 && c <= 0x03ff) return "greek";
   if (c >= 0x0530 && c <= 0x058f) return "armenian";
   if ((c >= 0x61 && c <= 0x7a) || (c >= 0x41 && c <= 0x5a)) return "latin";
-  if (c >= 0xff21 && c <= 0xff5a) return "latin"; // full-width letters
+  if (c >= 0xff21 && c <= 0xff5a) return "latin";
   return "other";
 }
 
-// Replace confusable + full-width characters with ASCII, and report which
-// writing systems appear among the domain's *letters*.
-function foldConfusables(domain: string): {
-  folded: string;
-  swaps: string[];
-  scripts: Set<ScriptName>;
-} {
+function foldConfusables(domain: string): { folded: string; swaps: string[]; scripts: Set<ScriptName> } {
   let folded = "";
   const swaps: string[] = [];
   const scripts = new Set<ScriptName>();
-
   for (const ch of domain) {
     const sc = scriptOf(ch);
     if (sc !== "other") scripts.add(sc);
-
-    if (CONFUSABLES[ch]) {
-      folded += CONFUSABLES[ch];
-      swaps.push(`'${ch}' → '${CONFUSABLES[ch]}'`);
-    } else if (ch >= "\uFF21" && ch <= "\uFF5A") {
+    const mapped = CONFUSABLES[ch];
+    if (mapped) {
+      folded += mapped;
+      swaps.push(`'${ch}' → '${mapped}'`);
+    } else if (ch >= "Ａ" && ch <= "ｚ") {
       const ascii = String.fromCharCode(ch.charCodeAt(0) - 0xfee0);
       folded += ascii;
       swaps.push(`'${ch}' → '${ascii}'`);
@@ -513,22 +521,25 @@ function foldConfusables(domain: string): {
       folded += ch;
     }
   }
-
   return { folded, swaps, scripts };
 }
 
 // ─── Error result ────────────────────────────────────────────────────────────
 
-function errorResult(url: string, _message: string): UrlAnalysisResult {
+function errorResult(url: string, message: string): UrlAnalysisResult {
   return {
     url,
     domain: url,
+    registrableDomain: "",
+    allowlisted: false,
     verdict: "unknown",
     confidence: "none",
-    evidenceScore: 0,
-    evidenceMax: 0,
+    riskScore: 0,
     evidence: [],
+    suppressedEvidence: [],
+    category: { label: "none", points: { credential_phishing: 0, job_scam: 0, shopping_scam: 0 }, reasons: [] },
     domainInfo: null,
     analyzedAt: new Date().toISOString(),
+    error: message,
   };
 }

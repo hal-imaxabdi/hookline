@@ -1,0 +1,12 @@
+<!--
+  SYNTHETIC: a layout where Gmail's obfuscated class names changed but the
+  semantic attributes ([data-message-id], span[email]) survived. Tests the
+  fallback chains. Not real Gmail HTML.
+-->
+<div role="main">
+  <h2 data-thread-perm-id="thread-f:9">Quarterly report</h2>
+  <div data-message-id="#msg-f:999">
+    <h3 class="iw"><span email="alice@contoso.example" name="Alice">Alice</span></h3>
+    <div class="ii gt"><div>Hi team, the quarterly report is attached. See https://contoso.example/report</div></div>
+  </div>
+</div>

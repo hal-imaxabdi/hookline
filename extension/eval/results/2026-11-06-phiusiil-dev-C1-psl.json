@@ -1,0 +1,290 @@
+{
+  "kind": "url",
+  "environment": {
+    "hooklineVersion": "1.0.0",
+    "rulesetFingerprint": "03331b21",
+    "engineFingerprint": "8af7c0cc12fcd9d9",
+    "node": "v26.13.0",
+    "platform": "win32",
+    "date": "2026-11-06T04:23:34.379Z"
+  },
+  "dataset": {
+    "id": "phiusiil",
+    "name": "PhiUSIIL Phishing URL Dataset (UCI #967)",
+    "sourceUrl": "https://archive.ics.uci.edu/dataset/967/phiusiil+phishing+url+dataset",
+    "license": "CC BY 4.0",
+    "citation": "A. Prasad and S. Chandra, \"PhiUSIIL: A diverse security profile empowered phishing URL detection framework based on similarity index and incremental learning,\" Computers & Security, vol. 136, 2024, 103545.",
+    "file": "data/raw/phiusiil/PhiUSIIL_Phishing_URL_Dataset.csv",
+    "sha256": "a236549cd369cd80bd478ff8e1779cbf44c58d5c3f79f7a51a1adbed7d06d1c6",
+    "downloadedAt": "2026-11-06",
+    "totalRows": 235795,
+    "unknownLabel": 0,
+    "emptyUrl": 0,
+    "duplicatesRemoved": 425,
+    "conflictingLabelsDropped": 0,
+    "uniqueUsable": 235370,
+    "inSplit": {
+      "phishing": 50223,
+      "legitimate": 67295
+    }
+  },
+  "sampling": {
+    "method": "Stratified: 25000 per class drawn uniformly without replacement (Fisher–Yates, mulberry32 seed 42)",
+    "seed": 42,
+    "perClass": 25000,
+    "split": "dev",
+    "splitMethod": "FNV-1a(\"hookline-split-v1\" + url) mod 2 (0 = dev, 1 = test); independent of seed",
+    "dedupe": true,
+    "schemePolicy": "as-is",
+    "sampled": 50000,
+    "unparseable": 0,
+    "evaluated": 50000
+  },
+  "config": {
+    "allowlist": false,
+    "allowlistMeta": {
+      "description": "disabled (stage 0)",
+      "size": 0
+    },
+    "positiveClass": "phishing",
+    "flaggedMeans": "verdict ∈ {suspicious, high_risk} (score ≥ 20)"
+  },
+  "metrics": {
+    "tp": 3888,
+    "fp": 281,
+    "tn": 24719,
+    "fn": 21112,
+    "n": 50000,
+    "precision": 0.9325977452626529,
+    "recall": 0.15552,
+    "falsePositiveRate": 0.01124,
+    "f1": 0.2665843875347115,
+    "accuracy": 0.57214
+  },
+  "confidenceIntervals95": {
+    "recall": [
+      0.15108068697469149,
+      0.16006516121961356
+    ],
+    "falsePositiveRate": [
+      0.010006242444149188,
+      0.012623938592336318
+    ]
+  },
+  "thresholdSweep": [
+    {
+      "threshold": 10,
+      "tp": 16064,
+      "fp": 317,
+      "tn": 24683,
+      "fn": 8936,
+      "n": 50000,
+      "precision": 0.9806483120688603,
+      "recall": 0.64256,
+      "falsePositiveRate": 0.01268,
+      "f1": 0.7763949638723086,
+      "accuracy": 0.81494
+    },
+    {
+      "threshold": 20,
+      "tp": 3888,
+      "fp": 281,
+      "tn": 24719,
+      "fn": 21112,
+      "n": 50000,
+      "precision": 0.9325977452626529,
+      "recall": 0.15552,
+      "falsePositiveRate": 0.01124,
+      "f1": 0.2665843875347115,
+      "accuracy": 0.57214
+    },
+    {
+      "threshold": 30,
+      "tp": 2036,
+      "fp": 103,
+      "tn": 24897,
+      "fn": 22964,
+      "n": 50000,
+      "precision": 0.9518466573165031,
+      "recall": 0.08144,
+      "falsePositiveRate": 0.00412,
+      "f1": 0.15004237444268395,
+      "accuracy": 0.53866
+    },
+    {
+      "threshold": 40,
+      "tp": 1180,
+      "fp": 103,
+      "tn": 24897,
+      "fn": 23820,
+      "n": 50000,
+      "precision": 0.9197194076383476,
+      "recall": 0.0472,
+      "falsePositiveRate": 0.00412,
+      "f1": 0.08979188068333142,
+      "accuracy": 0.52154
+    },
+    {
+      "threshold": 50,
+      "tp": 391,
+      "fp": 38,
+      "tn": 24962,
+      "fn": 24609,
+      "n": 50000,
+      "precision": 0.9114219114219114,
+      "recall": 0.01564,
+      "falsePositiveRate": 0.00152,
+      "f1": 0.030752290691729918,
+      "accuracy": 0.50706
+    },
+    {
+      "threshold": 60,
+      "tp": 185,
+      "fp": 3,
+      "tn": 24997,
+      "fn": 24815,
+      "n": 50000,
+      "precision": 0.9840425531914894,
+      "recall": 0.0074,
+      "falsePositiveRate": 0.00012,
+      "f1": 0.014689534699063048,
+      "accuracy": 0.50364
+    },
+    {
+      "threshold": 70,
+      "tp": 62,
+      "fp": 3,
+      "tn": 24997,
+      "fn": 24938,
+      "n": 50000,
+      "precision": 0.9538461538461539,
+      "recall": 0.00248,
+      "falsePositiveRate": 0.00012,
+      "f1": 0.004947137442649112,
+      "accuracy": 0.50118
+    }
+  ],
+  "predictedCategory": {
+    "credential_phishing": {
+      "phishing": 856,
+      "legitimate": 281
+    },
+    "job_scam": {
+      "phishing": 0,
+      "legitimate": 0
+    },
+    "shopping_scam": {
+      "phishing": 0,
+      "legitimate": 0
+    },
+    "none": {
+      "phishing": 24144,
+      "legitimate": 24719
+    }
+  },
+  "allowlistedItems": {
+    "phishing": 0,
+    "legitimate": 0
+  },
+  "ruleFires": {
+    "URL_NO_HTTPS": {
+      "phishing": 12722,
+      "legitimate": 0
+    },
+    "URL_SUSPICIOUS_TLD": {
+      "phishing": 2550,
+      "legitimate": 24
+    },
+    "URL_LONG_DOMAIN": {
+      "phishing": 2266,
+      "legitimate": 12
+    },
+    "URL_MANY_HYPHENS": {
+      "phishing": 1371,
+      "legitimate": 22
+    },
+    "URL_PATH_SCRIPT": {
+      "phishing": 989,
+      "legitimate": 0
+    },
+    "URL_BRAND_IN_DOMAIN": {
+      "phishing": 543,
+      "legitimate": 68
+    },
+    "URL_DEEP_SUBDOMAINS": {
+      "phishing": 562,
+      "legitimate": 0
+    },
+    "URL_PATH_LOGIN": {
+      "phishing": 555,
+      "legitimate": 0
+    },
+    "URL_TYPOSQUAT_EDIT": {
+      "phishing": 153,
+      "legitimate": 215
+    },
+    "URL_IP_HOST": {
+      "phishing": 139,
+      "legitimate": 0
+    },
+    "URL_PATH_VERIFY": {
+      "phishing": 87,
+      "legitimate": 0
+    },
+    "URL_PATH_BRAND": {
+      "phishing": 82,
+      "legitimate": 0
+    },
+    "URL_PUNYCODE": {
+      "phishing": 36,
+      "legitimate": 0
+    },
+    "URL_TYPOSQUAT_KEYBOARD": {
+      "phishing": 4,
+      "legitimate": 1
+    },
+    "URL_TYPOSQUAT_LEET": {
+      "phishing": 2,
+      "legitimate": 0
+    }
+  },
+  "ablation": [],
+  "allowlistAblation": null,
+  "examples": {
+    "falsePositives": [
+      "https://www.abasketfullofapples.com  [URL_BRAND_IN_DOMAIN]",
+      "https://www.cbeta.org  [URL_TYPOSQUAT_EDIT]",
+      "https://www.psta.net  [URL_TYPOSQUAT_EDIT]",
+      "https://www.adime.cn  [URL_TYPOSQUAT_EDIT]",
+      "https://www.atmail.com  [URL_TYPOSQUAT_EDIT]",
+      "https://www.ndti.org.uk  [URL_TYPOSQUAT_EDIT]",
+      "https://www.dhimurru.com.au  [URL_BRAND_IN_DOMAIN]",
+      "https://www.whats-on-netflix.com  [URL_BRAND_IN_DOMAIN]",
+      "https://www.mcts.edu  [URL_TYPOSQUAT_EDIT]",
+      "https://www.city.aomori.aomori.jp  [URL_TYPOSQUAT_EDIT]",
+      "https://www.meteo.gr  [URL_TYPOSQUAT_EDIT]",
+      "https://www.peto.pet  [URL_TYPOSQUAT_EDIT]",
+      "https://www.moha.gov.vn  [URL_TYPOSQUAT_EDIT]",
+      "https://www.7cups.com  [URL_BRAND_IN_DOMAIN]",
+      "https://www.metrx.com  [URL_TYPOSQUAT_EDIT]"
+    ],
+    "falseNegatives": [
+      "http://www.stevenemily.com",
+      "http://wsdownloads.cn/zh-cn",
+      "https://fen-gero-della-fridio-keliko.web.app/",
+      "https://frei-raus.eu/images/.indx/?email=redacted@redacted.tld&amp;-6e6b4799ff059a9762cb09e317f4d19c-hddas-rya72xq2545lat0173-h3z-yfolsj6qputqdkmbjrevlynjw3lnrh9ha26m-20yvskdu-6e6b4799ff059a9762cb09e317f4d19c",
+      "http://www.blakebyblake.com",
+      "https://blacknativebeauty.com/mkq3vth3mw8xtddwoui=",
+      "http://www.tr.csqoy.com",
+      "https://bipprovincempress.click/",
+      "https://ipfs.io/ipfs/qmtcopdemcbad1crq4adl2bvnxymvax7eewmodbfcuklzv",
+      "https://ipfs.io/ipfs/qmatrrxfwqqdokdgme7hsipxya8jekjeskwaa2pychywhj",
+      "https://digital3riverslogin.icu/cancel/",
+      "https://connection-orangebank-certicode.derlma.com/8754329/",
+      "https://goodsallegrol0-kalnie.7567576.xyz/ehskymzt?from_sms=1",
+      "https://file-share-from-kerry-folder-view.web.app/",
+      "https://dev-allstarsingprovin.pantheonsite.io"
+    ]
+  },
+  "durationMs": 12404
+}

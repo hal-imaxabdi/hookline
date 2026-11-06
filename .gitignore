@@ -35,3 +35,6 @@ htmlcov/
 
 # Temporary files
 *.tmp
+# Hookline evaluation data (downloaded; see extension/eval/datasets.json for sources + checksums)
+extension/eval/data/raw/
+extension/eval/data/derived/

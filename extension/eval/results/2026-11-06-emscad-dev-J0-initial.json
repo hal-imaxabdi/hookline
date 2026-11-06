@@ -1,0 +1,181 @@
+{
+  "kind": "text",
+  "environment": {
+    "hooklineVersion": "1.0.0",
+    "rulesetFingerprint": "c41cfd80",
+    "engineFingerprint": "e34438ef6127c3f5",
+    "node": "v26.13.0",
+    "platform": "win32",
+    "date": "2026-11-06T04:41:36.620Z"
+  },
+  "dataset": {
+    "id": "emscad",
+    "name": "EMSCAD — Employment Scam Aegean Dataset (Kaggle mirror: Real / Fake Job Posting Prediction)",
+    "sourceUrl": "https://www.kaggle.com/datasets/shivamb/real-or-fake-fake-jobposting-prediction",
+    "citation": "S. Vidros, C. Kolias, G. Kambourakis, L. Akoglu, \"Automatic Detection of Online Recruitment Frauds: Characteristics, Methods, and a Public Dataset,\" Future Internet 9(1):6, 2017.",
+    "file": "data/derived/emscad_scam_messages.csv",
+    "sha256": "eeffa6347fc464fc9e23aa44dc28295211b818e747e0118bb0a9772412817a20",
+    "rows": 17880,
+    "unknownLabel": 0,
+    "inSplit": {
+      "positive": 415,
+      "negative": 8520
+    }
+  },
+  "sampling": {
+    "method": "All rows in the split (no sampling)",
+    "seed": 42,
+    "split": "dev",
+    "splitMethod": "FNV-1a(\"hookline-split-v1\" + id + \"|\" + first 64 chars) mod 2",
+    "evaluated": 8935,
+    "textKind": "posting"
+  },
+  "metrics": {
+    "tp": 24,
+    "fp": 231,
+    "tn": 8289,
+    "fn": 391,
+    "n": 8935,
+    "precision": 0.09411764705882353,
+    "recall": 0.05783132530120482,
+    "falsePositiveRate": 0.027112676056338027,
+    "f1": 0.07164179104477612,
+    "accuracy": 0.9303861219921656
+  },
+  "confidenceIntervals95": {
+    "recall": [
+      0.039167144934624004,
+      0.08460632048749754
+    ],
+    "falsePositiveRate": [
+      0.023871366846392843,
+      0.030780219656149292
+    ]
+  },
+  "perCategory": {
+    "credential_phishing": {
+      "tp": 0,
+      "fp": 4,
+      "tn": 8931,
+      "fn": 0,
+      "n": 8935,
+      "precision": 0,
+      "recall": 0,
+      "falsePositiveRate": 0.0004476776720761052,
+      "f1": 0,
+      "accuracy": 0.9995523223279239
+    },
+    "job_scam": {
+      "tp": 19,
+      "fp": 67,
+      "tn": 8453,
+      "fn": 396,
+      "n": 8935,
+      "precision": 0.22093023255813954,
+      "recall": 0.04578313253012048,
+      "falsePositiveRate": 0.007863849765258215,
+      "f1": 0.07584830339321356,
+      "accuracy": 0.9481813094571908
+    },
+    "shopping_scam": {
+      "tp": 0,
+      "fp": 165,
+      "tn": 8770,
+      "fn": 0,
+      "n": 8935,
+      "precision": 0,
+      "recall": 0,
+      "falsePositiveRate": 0.01846670397313934,
+      "f1": 0,
+      "accuracy": 0.9815332960268607
+    }
+  },
+  "predictedCategory": {
+    "credential_phishing": {
+      "positive": 3,
+      "negative": 1
+    },
+    "job_scam": {
+      "positive": 19,
+      "negative": 67
+    },
+    "shopping_scam": {
+      "positive": 2,
+      "negative": 163
+    },
+    "none": {
+      "positive": 391,
+      "negative": 8289
+    }
+  },
+  "ruleFires": {
+    "EMAIL_URGENCY": {
+      "positive": 51,
+      "negative": 519
+    },
+    "EMAIL_CREDENTIAL_REQUEST": {
+      "positive": 4,
+      "negative": 15
+    },
+    "JOB_UNREALISTIC_PAY": {
+      "positive": 17,
+      "negative": 3
+    },
+    "SHOP_NO_CONTACT": {
+      "positive": 2,
+      "negative": 164
+    },
+    "JOB_CHECK_SCHEME": {
+      "positive": 1,
+      "negative": 10
+    },
+    "JOB_MOVE_TO_CHAT": {
+      "positive": 1,
+      "negative": 1
+    },
+    "JOB_TASK_DEPOSIT": {
+      "positive": 0,
+      "negative": 28
+    },
+    "JOB_UPFRONT_FEE": {
+      "positive": 0,
+      "negative": 7
+    },
+    "JOB_SENSITIVE_INFO": {
+      "positive": 0,
+      "negative": 14
+    },
+    "JOB_OFFER_NO_INTERVIEW": {
+      "positive": 0,
+      "negative": 4
+    }
+  },
+  "ablation": [],
+  "examples": {
+    "falsePositives": [
+      "id 47: JOB_TASK_DEPOSIT \"In Egypt common practice has shown that most of the development banks have turned to current operations and deposit gathering, acting as mere commercial banks a\"",
+      "id 129: SHOP_NO_CONTACT No phone/tel: link and no recognisable street address found on the page",
+      "id 159: JOB_UPFRONT_FEE \"…irst client certification and background check fees after 90 days of active client servicin…\"",
+      "id 219: SHOP_NO_CONTACT No phone/tel: link and no recognisable street address found on the page",
+      "id 266: SHOP_NO_CONTACT No phone/tel: link and no recognisable street address found on the page",
+      "id 465: SHOP_NO_CONTACT No phone/tel: link and no recognisable street address found on the page",
+      "id 575: JOB_SENSITIVE_INFO \"Anyone with a UK bank account and a UK mobile phone can download the Moni app and start sending money.It is a simple, convenient and secure way to send money in\"",
+      "id 613: SHOP_NO_CONTACT No phone/tel: link and no recognisable street address found on the page",
+      "id 1204: SHOP_NO_CONTACT No phone/tel: link and no recognisable street address found on the page",
+      "id 1207: SHOP_NO_CONTACT No phone/tel: link and no recognisable street address found on the page | EMAIL_URGENCY "
+    ],
+    "falseNegatives": [
+      "id 99",
+      "id 181",
+      "id 358",
+      "id 494",
+      "id 538",
+      "id 574",
+      "id 604",
+      "id 629",
+      "id 815",
+      "id 826"
+    ]
+  },
+  "durationMs": 24647
+}

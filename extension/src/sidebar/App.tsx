@@ -1,228 +1,104 @@
-import React, { useState, useEffect } from "react";
-import { SidebarState, SidebarView, EmailAnalysisResult, UrlAnalysisResult } from "../shared/types";
+import React, { useCallback, useEffect, useState } from "react";
+import type { FromBackgroundMessage, SidebarView, TabState, ToBackgroundMessage } from "../shared/types";
+import { loadSettings, onSettingsChanged, DEFAULT_SETTINGS, type Settings } from "../shared/settings";
 import Header from "./components/Header";
 import TabBar from "./components/TabBar";
 import IdleScreen from "./components/IdleScreen";
 import UrlTestBar from "./components/UrlTestBar";
 import SummaryTab from "./components/SummaryTab";
-
-
 import EvidenceTab from "./components/EvidenceTab";
 import LinksTab from "./components/LinksTab";
+import SettingsView from "./components/SettingsView";
+import StatusBanner from "./components/StatusBanner";
 
-
-const initialState: SidebarState = {
-  mode: "idle",
-  activeView: "summary",
-  isLoading: false,
-  currentUrl: null,
-  urlAnalysis: null,
-  emailAnalysis: null,
-  error: null,
-};
+function send<T>(msg: ToBackgroundMessage): Promise<T | undefined> {
+  return chrome.runtime.sendMessage(msg).catch(() => undefined) as Promise<T | undefined>;
+}
 
 export default function App() {
-  const [state, setState] = useState<SidebarState>(initialState);
+  const [tabId, setTabId] = useState<number | null>(null);
+  const [isGmail, setIsGmail] = useState(false);
+  const [state, setState] = useState<TabState | null>(null);
+  const [view, setView] = useState<SidebarView>("summary");
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
-  // ── Message listener ──────────────────────────────────────────────────
-
-  useEffect(() => {
-    const handleMessage = (message: { type: string; payload?: unknown }) => {
-      console.log("[Hookline Sidebar] Message:", message.type);
-
-      switch (message.type) {
-
-        case "EMAIL_DATA_EXTRACTED": {
-          setState((prev) => ({ ...prev, mode: "email", isLoading: true, emailAnalysis: null }));
-          break;
-        }
-
-        case "EMAIL_ANALYSIS_RESULT": {
-          const result = message.payload as EmailAnalysisResult;
-          setState((prev) => ({
-            ...prev,
-            mode: "email",
-            isLoading: false,
-            emailAnalysis: result,
-            urlAnalysis: null,
-          }));
-          break;
-        }
-
-        case "URL_ANALYSIS_RESULT": {
-          const result = message.payload as UrlAnalysisResult;
-          // Don't switch to URL mode if we already have email analysis showing
-          setState((prev) => {
-            if (prev.mode === "email" && prev.emailAnalysis) return prev;
-            return {
-              ...prev,
-              mode: "url",
-              isLoading: false,
-              urlAnalysis: result,
-              emailAnalysis: null,
-              currentUrl: result.url,
-            };
-          });
-          break;
-        }
-
-        case "ANALYZE_URL": {
-          const payload = message.payload as { url: string };
-          setState((prev) => ({
-            ...prev,
-            mode: "url",
-            currentUrl: payload.url,
-            isLoading: true,
-            urlAnalysis: null,
-          }));
-          break;
-        }
-
-        case "TAB_UPDATED": {
-          const payload = message.payload as { url: string };
-          // Only update currentUrl — never change mode from this event
-          setState((prev) => ({
-            ...prev,
-            currentUrl: payload.url,
-          }));
-          break;
-        }
-      }
-    };
-
-    chrome.runtime.onMessage.addListener(handleMessage);
-    return () => chrome.runtime.onMessage.removeListener(handleMessage);
-  }, []);
-
-  // ── Detect current tab on mount ───────────────────────────────────────
-
-  useEffect(() => {
+  // ── Which tab is this panel showing? ────────────────────────────────────
+  const refreshActiveTab = useCallback(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs[0];
-      if (tab?.url) {
-        setState((prev) => ({
-          ...prev,
-          currentUrl: tab.url ?? null,
-          // Only set email mode if we don't already have a result showing
-          mode: (tab.url?.includes("mail.google.com") && prev.mode === "idle") ? "email" : prev.mode,
-        }));
-      }
+      const t = tabs[0];
+      if (t?.id === undefined) return;
+      setTabId(t.id);
+      // tab.url is only visible for hosts we have permission for (mail.google.com).
+      setIsGmail(typeof t.url === "string" && t.url.startsWith("https://mail.google.com/"));
     });
   }, []);
-
-  // ── On mount: poll for cached result ─────────────────────────────────
 
   useEffect(() => {
-    let attempts = 0;
-    const maxAttempts = 20;
+    refreshActiveTab();
+    const onActivated = () => refreshActiveTab();
+    chrome.tabs.onActivated.addListener(onActivated);
+    return () => chrome.tabs.onActivated.removeListener(onActivated);
+  }, [refreshActiveTab]);
 
-    const poll = () => {
-      chrome.runtime.sendMessage({ type: "GET_LAST_RESULT" }, (response) => {
-        void chrome.runtime.lastError;
-
-        if (response?.emailResult) {
-          setState((prev) => ({
-            ...prev,
-            mode: "email",
-            isLoading: false,
-            emailAnalysis: response.emailResult,
-            urlAnalysis: null,
-          }));
-        } else if (response?.urlResult) {
-          setState((prev) => ({
-            ...prev,
-            mode: "url",
-            isLoading: false,
-            urlAnalysis: response.urlResult,
-            currentUrl: response.urlResult.url,
-          }));
-        } else if (attempts < maxAttempts) {
-          attempts++;
-          setTimeout(poll, 500);
-        } else {
-          setState((prev) => ({ ...prev, isLoading: false }));
-        }
-      });
+  // ── Load state for the tab + live updates ──────────────────────────────
+  useEffect(() => {
+    if (tabId === null) return;
+    let cancelled = false;
+    void send<TabState>({ type: "GET_TAB_STATE", tabId }).then((s) => { if (!cancelled && s) setState(s); });
+    const onMsg = (m: FromBackgroundMessage) => {
+      if (m?.type === "TAB_STATE" && m.payload.tabId === tabId) setState(m.payload);
     };
+    chrome.runtime.onMessage.addListener(onMsg);
+    return () => { cancelled = true; chrome.runtime.onMessage.removeListener(onMsg); };
+  }, [tabId]);
 
-    setTimeout(poll, 300);
+  // ── Settings ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    void loadSettings().then(setSettings);
+    return onSettingsChanged(setSettings);
   }, []);
 
-  // ── Tab navigation ────────────────────────────────────────────────────
-
-  const setActiveView = (view: SidebarView) => {
-    setState((prev) => ({ ...prev, activeView: view }));
-  };
-
-  // ── Manual URL test (paste-box) ───────────────────────────────────────
-
-  const analyzeManualUrl = (raw: string) => {
+  const analyzeUrl = (raw: string) => {
+    if (tabId === null) return;
     const url = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`;
-    setState((prev) => ({
-      ...prev,
-      mode: "url",
-      isLoading: true,
-      urlAnalysis: null,
-      emailAnalysis: null,
-      currentUrl: url,
-    }));
-    chrome.runtime.sendMessage({ type: "ANALYZE_URL", payload: { url } }, (response) => {
-      void chrome.runtime.lastError;
-      if (response?.result) {
-        setState((prev) => ({
-          ...prev,
-          mode: "url",
-          isLoading: false,
-          urlAnalysis: response.result,
-          currentUrl: response.result.url,
-        }));
-      } else {
-        setState((prev) => ({ ...prev, isLoading: false }));
-      }
+    setView("summary");
+    void send({ type: "ANALYZE_URL", tabId, url });
+  };
+  const analyzePage = () => { if (tabId !== null) { setView("summary"); void send({ type: "ANALYZE_PAGE", tabId }); } };
+  const retryEmail = () => { if (tabId !== null) void send({ type: "RETRY_EMAIL", tabId }); };
+  const recheckBackend = () => {
+    void send<TabState["backendStatus"]>({ type: "CHECK_BACKEND" }).then((status) => {
+      if (status && state) setState({ ...state, backendStatus: status });
     });
   };
 
-  // ── Render tab content ────────────────────────────────────────────────
-
-  function renderTabContent() {
-    switch (state.activeView) {
-      case "summary":   return <SummaryTab state={state} />;
-
-
-      case "evidence":  return <EvidenceTab state={state} />;
-      case "links":     return <LinksTab state={state} />;
-      default:          return <SummaryTab state={state} />;
-    }
-  }
+  const mode = state?.mode ?? "idle";
+  const showSettings = view === "settings";
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        backgroundColor: "var(--bg-base)",
-        color: "var(--text-primary)",
-        fontFamily: "var(--font-ui)",
-        overflow: "hidden",
-      }}
-    >
-      <Header />
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", backgroundColor: "var(--bg-base)", color: "var(--text-primary)", fontFamily: "var(--font-ui)", overflow: "hidden" }}>
+      <Header onSettings={() => setView(showSettings ? "summary" : "settings")} settingsOpen={showSettings} />
       <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-        {state.mode !== "email" && <UrlTestBar onAnalyze={analyzeManualUrl} />}
-        {state.mode === "idle" ? (
-          <IdleScreen currentUrl={state.currentUrl} />
+        {showSettings ? (
+          <SettingsView settings={settings} />
         ) : (
-          renderTabContent()
+          <>
+            <StatusBanner state={state} settings={settings} onRetryEmail={retryEmail} onRecheckBackend={recheckBackend} />
+            {mode !== "email" && <UrlTestBar onAnalyze={analyzeUrl} onAnalyzePage={isGmail ? undefined : analyzePage} />}
+            {mode === "idle" && !state?.isLoading ? (
+              <IdleScreen isGmail={isGmail} />
+            ) : view === "evidence" ? (
+              <EvidenceTab state={state} />
+            ) : view === "links" ? (
+              <LinksTab state={state} />
+            ) : (
+              <SummaryTab state={state} settings={settings} />
+            )}
+          </>
         )}
       </div>
-      {state.mode !== "idle" && (
-        <TabBar
-          activeView={state.activeView}
-          onViewChange={setActiveView}
-          mode={state.mode}
-          linkCount={state.emailAnalysis?.links?.length}
-        />
+      {!showSettings && mode !== "idle" && (
+        <TabBar activeView={view} onViewChange={setView} mode={mode} linkCount={state?.email?.links.length} />
       )}
     </div>
   );

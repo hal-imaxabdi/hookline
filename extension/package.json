@@ -1,27 +1,36 @@
 {
   "name": "hookline-extension",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Hookline - Browser Security Assistant",
+  "description": "Hookline — phishing, fake-job and fake-store detection for Gmail and the web",
   "scripts": {
     "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",
     "build:dev": "webpack --mode development",
-    "test": "tsx tests/analyzers.test.ts",
-    "eval": "tsx eval/evaluate.ts"
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.tools.json",
+    "test": "tsx --test \"tests/**/*.test.ts\"",
+    "eval": "tsx eval/evaluate.ts",
+    "eval:all": "tsx eval/runAll.ts",
+    "prepare:allowlist": "tsx eval/prepare/buildAllowlist.ts",
+    "prepare:emscad": "tsx eval/prepare/emscad.ts",
+    "rules:doc": "tsx eval/printRules.ts"
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "tldts": "6.1.86"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.260",
+    "@types/jsdom": "21.1.7",
+    "@types/node": "22.10.2",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.16",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
     "html-webpack-plugin": "^5.5.3",
+    "jsdom": "25.0.1",
     "mini-css-extract-plugin": "^2.7.6",
     "postcss": "^8.4.31",
     "postcss-loader": "^7.3.3",

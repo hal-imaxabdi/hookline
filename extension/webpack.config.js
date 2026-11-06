@@ -74,9 +74,6 @@ module.exports = (env, argv) => {
       new CopyWebpackPlugin({
         patterns: [
           { from: "public/manifest.json", to: "manifest.json" },
-          // content.css must be copied explicitly — it's not imported by any TS entry point
-          // Chrome extensions require standalone CSS files referenced in manifest
-          { from: "src/content/content.css", to: "content.css" },
           {
             from: "public/icons",
             to: "icons",

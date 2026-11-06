@@ -1,0 +1,153 @@
+{
+  "kind": "text",
+  "environment": {
+    "hooklineVersion": "1.0.0",
+    "rulesetFingerprint": "c41cfd80",
+    "engineFingerprint": "49b8329efc5edea6",
+    "node": "v26.13.0",
+    "platform": "win32",
+    "date": "2026-11-06T04:44:01.729Z"
+  },
+  "dataset": {
+    "id": "emscad",
+    "name": "EMSCAD — Employment Scam Aegean Dataset (Kaggle mirror: Real / Fake Job Posting Prediction)",
+    "sourceUrl": "https://www.kaggle.com/datasets/shivamb/real-or-fake-fake-jobposting-prediction",
+    "citation": "S. Vidros, C. Kolias, G. Kambourakis, L. Akoglu, \"Automatic Detection of Online Recruitment Frauds: Characteristics, Methods, and a Public Dataset,\" Future Internet 9(1):6, 2017.",
+    "file": "data/derived/emscad_scam_messages.csv",
+    "sha256": "eeffa6347fc464fc9e23aa44dc28295211b818e747e0118bb0a9772412817a20",
+    "rows": 17880,
+    "unknownLabel": 0,
+    "inSplit": {
+      "positive": 415,
+      "negative": 8520
+    }
+  },
+  "sampling": {
+    "method": "All rows in the split (no sampling)",
+    "seed": 42,
+    "split": "dev",
+    "splitMethod": "FNV-1a(\"hookline-split-v1\" + id + \"|\" + first 64 chars) mod 2",
+    "evaluated": 8935,
+    "textKind": "posting"
+  },
+  "metrics": {
+    "tp": 17,
+    "fp": 6,
+    "tn": 8514,
+    "fn": 398,
+    "n": 8935,
+    "precision": 0.7391304347826086,
+    "recall": 0.04096385542168675,
+    "falsePositiveRate": 0.0007042253521126761,
+    "f1": 0.0776255707762557,
+    "accuracy": 0.9547845551203133
+  },
+  "confidenceIntervals95": {
+    "recall": [
+      0.025730714184475596,
+      0.06461721585865329
+    ],
+    "falsePositiveRate": [
+      0.00032279149991622756,
+      0.0015356967060441225
+    ]
+  },
+  "perCategory": {
+    "credential_phishing": {
+      "tp": 0,
+      "fp": 0,
+      "tn": 8935,
+      "fn": 0,
+      "n": 8935,
+      "precision": 0,
+      "recall": 0,
+      "falsePositiveRate": 0,
+      "f1": 0,
+      "accuracy": 1
+    },
+    "job_scam": {
+      "tp": 17,
+      "fp": 6,
+      "tn": 8514,
+      "fn": 398,
+      "n": 8935,
+      "precision": 0.7391304347826086,
+      "recall": 0.04096385542168675,
+      "falsePositiveRate": 0.0007042253521126761,
+      "f1": 0.0776255707762557,
+      "accuracy": 0.9547845551203133
+    },
+    "shopping_scam": {
+      "tp": 0,
+      "fp": 0,
+      "tn": 8935,
+      "fn": 0,
+      "n": 8935,
+      "precision": 0,
+      "recall": 0,
+      "falsePositiveRate": 0,
+      "f1": 0,
+      "accuracy": 1
+    }
+  },
+  "predictedCategory": {
+    "credential_phishing": {
+      "positive": 0,
+      "negative": 0
+    },
+    "job_scam": {
+      "positive": 17,
+      "negative": 6
+    },
+    "shopping_scam": {
+      "positive": 0,
+      "negative": 0
+    },
+    "none": {
+      "positive": 398,
+      "negative": 8514
+    }
+  },
+  "ruleFires": {
+    "JOB_UNREALISTIC_PAY": {
+      "positive": 17,
+      "negative": 3
+    },
+    "JOB_UPFRONT_FEE": {
+      "positive": 0,
+      "negative": 1
+    },
+    "JOB_SENSITIVE_INFO": {
+      "positive": 0,
+      "negative": 1
+    },
+    "JOB_MOVE_TO_CHAT": {
+      "positive": 0,
+      "negative": 1
+    }
+  },
+  "ablation": [],
+  "examples": {
+    "falsePositives": [
+      "id 159: JOB_UPFRONT_FEE \"…irst client certification and background check fees after 90 days of active client servicin…\"",
+      "id 1353: JOB_SENSITIVE_INFO \"…amic startup environment. We provide: • 14th monthly salary • Social security • Friendly work environment\"",
+      "id 5318: JOB_UNREALISTIC_PAY earn $100,000 · \"from home\"",
+      "id 6295: JOB_UNREALISTIC_PAY $35per hour · \"from home\"",
+      "id 13919: JOB_UNREALISTIC_PAY £47 per hour · \"flexible hours\"",
+      "id 15654: JOB_MOVE_TO_CHAT \"Familiarity with JavaScript frameworks like jQueryComfortable working with a distributed team using chat, Google Hangouts, etc.\""
+    ],
+    "falseNegatives": [
+      "id 99",
+      "id 181",
+      "id 358",
+      "id 494",
+      "id 538",
+      "id 574",
+      "id 604",
+      "id 629",
+      "id 815",
+      "id 826"
+    ]
+  },
+  "durationMs": 21471
+}

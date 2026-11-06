@@ -6,7 +6,11 @@
  *
  * All rules are explainable: every match produces a human-readable
  * evidence item with a title and description.
+ *
+ * Rule IDs, weights and categories live in ruleRegistry.ts.
  */
+
+import type { RuleId } from "./ruleRegistry";
 
 // ─── Urgency & Pressure Language ───────────────────────────────────────────
 // Words that create false urgency to bypass critical thinking.
@@ -36,56 +40,80 @@ export const CREDENTIAL_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
 // Official domains for brands frequently impersonated in phishing.
 // We check if the sender/link domain is NOT one of these but looks like it should be.
 
-export const KNOWN_BRANDS: Array<{ brand: string; officialDomains: string[]; keywords: string[] }> = [
+export interface BrandDef {
+  brand: string;
+  /** Registrable domains owned by the brand (subdomains included automatically). */
+  officialDomains: string[];
+  /**
+   * Strings that indicate the brand inside a hostname. Matched per hostname
+   * token (split on "." "-" "_"): keywords of 6+ characters may appear inside a
+   * longer token (paypalsecure); shorter or dictionary-like keywords must be a
+   * whole token (apple-support ✓, pineapple ✗). See C2 in eval/TUNING_LOG.md.
+   */
+  keywords: string[];
+  /** Keywords that must always match a whole token even if long. */
+  wholeTokenOnly?: string[];
+  /** brand.<ccTLD> / brand.co.<cc> / brand.com.<cc> are official too (google.de, amazon.co.jp). */
+  ccVariants?: boolean;
+}
+
+export const KNOWN_BRANDS: BrandDef[] = [
   {
     brand: "PayPal",
-    officialDomains: ["paypal.com", "paypal.me"],
-    keywords: ["paypal", "paypai", "pay-pal", "paypa1"],
+    officialDomains: ["paypal.com", "paypal.me", "paypalobjects.com", "paypal-community.com"],
+    keywords: ["paypal", "paypai", "paypa1", "pay-pal"],
+    ccVariants: true,
   },
   {
     brand: "Google",
-    officialDomains: ["google.com", "gmail.com", "accounts.google.com"],
-    keywords: ["google", "goog1e", "g00gle", "googIe"],
+    officialDomains: ["google.com", "google.org", "gmail.com", "youtube.com", "googleblog.com", "googleapis.com", "gstatic.com", "googleusercontent.com", "withgoogle.com", "goo.gl", "forms.gle", "g.co"],
+    keywords: ["google", "goog1e", "g00gle", "gmail"],
+    ccVariants: true,
   },
   {
     brand: "Microsoft",
-    officialDomains: ["microsoft.com", "office.com", "live.com", "outlook.com", "microsoftonline.com"],
-    keywords: ["microsoft", "microsooft", "micros0ft", "office365"],
+    officialDomains: ["microsoft.com", "office.com", "office365.com", "live.com", "outlook.com", "microsoftonline.com", "sharepoint.com", "onedrive.com", "1drv.ms", "bing.com", "msn.com", "azure.com", "windows.com", "xbox.com", "skype.com", "aka.ms"],
+    keywords: ["microsoft", "micros0ft", "microsooft", "office365", "outlook", "onedrive", "sharepoint"],
+    wholeTokenOnly: ["outlook"],
   },
   {
     brand: "Apple",
-    officialDomains: ["apple.com", "icloud.com"],
-    keywords: ["apple", "app1e", "appi", "icloud", "appleid"],
+    officialDomains: ["apple.com", "icloud.com", "me.com", "apple.news", "itunes.com"],
+    keywords: ["apple", "app1e", "icloud", "appleid", "itunes"],
+    ccVariants: true,
   },
   {
     brand: "Amazon",
-    officialDomains: ["amazon.com", "amazon.co.uk", "amazon.de", "amazon.co.jp", "amazon.in", "amazonaws.com"],
-    keywords: ["amazon", "amaz0n", "amazonn", "prime"],
+    officialDomains: ["amazon.com", "amazonaws.com", "media-amazon.com", "primevideo.com", "amazon.jobs", "a2z.com", "amzn.to"],
+    keywords: ["amazon", "amaz0n", "amazonn", "amzn"],
+    wholeTokenOnly: ["amazon"],
+    ccVariants: true,
   },
   {
     brand: "Netflix",
-    officialDomains: ["netflix.com"],
+    officialDomains: ["netflix.com", "netflix.net", "nflxext.com", "nflximg.net"],
     keywords: ["netflix", "netfl1x", "netfiix"],
   },
   {
     brand: "Facebook",
-    officialDomains: ["facebook.com", "fb.com", "meta.com"],
+    officialDomains: ["facebook.com", "fb.com", "meta.com", "messenger.com", "fbcdn.net", "fb.me"],
     keywords: ["facebook", "faceb00k", "facebok"],
   },
   {
     brand: "Bank of America",
-    officialDomains: ["bankofamerica.com"],
+    officialDomains: ["bankofamerica.com", "bofa.com", "mbna.com"],
     keywords: ["bankofamerica", "bofa", "bankamerica"],
   },
   {
     brand: "Chase",
-    officialDomains: ["chase.com", "jpmorgan.com"],
-    keywords: ["chase", "chasebank"],
+    officialDomains: ["chase.com", "jpmorgan.com", "jpmorganchase.com"],
+    keywords: ["chase", "chasebank", "chaseonline"],
   },
   {
     brand: "DHL",
-    officialDomains: ["dhl.com", "dhl.de"],
-    keywords: ["dhl", "dhi"],
+    officialDomains: ["dhl.com"],
+    keywords: ["dhl"],
+    ccVariants: true,
   },
   {
     brand: "FedEx",
@@ -95,32 +123,32 @@ export const KNOWN_BRANDS: Array<{ brand: string; officialDomains: string[]; key
   {
     brand: "UPS",
     officialDomains: ["ups.com"],
-    keywords: ["ups", "united-parcel"],
+    keywords: ["ups"],
   },
   {
     brand: "Instagram",
-    officialDomains: ["instagram.com"],
+    officialDomains: ["instagram.com", "cdninstagram.com", "instagr.am"],
     keywords: ["instagram", "lnstagram", "instagrarn"],
   },
   {
     brand: "WhatsApp",
-    officialDomains: ["whatsapp.com"],
-    keywords: ["whatsapp", "whatsapp-web", "whatsap"],
+    officialDomains: ["whatsapp.com", "whatsapp.net", "wa.me"],
+    keywords: ["whatsapp", "whatsap"],
   },
   {
     brand: "LinkedIn",
-    officialDomains: ["linkedin.com"],
+    officialDomains: ["linkedin.com", "lnkd.in", "licdn.com"],
     keywords: ["linkedin", "linkedln", "linkdin"],
   },
   {
     brand: "X (Twitter)",
-    officialDomains: ["x.com", "twitter.com", "t.co"],
+    officialDomains: ["x.com", "twitter.com", "t.co", "twimg.com"],
     keywords: ["twitter", "twiter", "twltter"],
   },
   {
     brand: "Steam",
-    officialDomains: ["steampowered.com", "steamcommunity.com"],
-    keywords: ["steam", "steamcommunlty", "steampowereed"],
+    officialDomains: ["steampowered.com", "steamcommunity.com", "steamstatic.com", "steamgames.com"],
+    keywords: ["steampowered", "steamcommunity", "steamcommunlty", "steampowereed", "steam"],
   },
   {
     brand: "Coinbase",
@@ -129,32 +157,33 @@ export const KNOWN_BRANDS: Array<{ brand: string; officialDomains: string[]; key
   },
   {
     brand: "Binance",
-    officialDomains: ["binance.com"],
+    officialDomains: ["binance.com", "binance.us"],
     keywords: ["binance", "blnance", "binancce"],
   },
   {
     brand: "Wells Fargo",
-    officialDomains: ["wellsfargo.com"],
+    officialDomains: ["wellsfargo.com", "wf.com"],
     keywords: ["wellsfargo", "wells-fargo", "wellsfarg0"],
   },
   {
     brand: "Citi",
-    officialDomains: ["citi.com", "citibank.com"],
-    keywords: ["citibank", "citi-bank"],
+    officialDomains: ["citi.com", "citibank.com", "citigroup.com"],
+    keywords: ["citibank", "citi-bank", "citi"],
   },
   {
     brand: "HSBC",
-    officialDomains: ["hsbc.com", "hsbc.co.uk"],
+    officialDomains: ["hsbc.com"],
     keywords: ["hsbc"],
+    ccVariants: true,
   },
   {
     brand: "Dropbox",
-    officialDomains: ["dropbox.com"],
+    officialDomains: ["dropbox.com", "dropboxusercontent.com", "db.tt"],
     keywords: ["dropbox", "dropb0x", "dropbax"],
   },
   {
     brand: "Adobe",
-    officialDomains: ["adobe.com"],
+    officialDomains: ["adobe.com", "adobe.io", "adobelogin.com"],
     keywords: ["adobe", "ad0be"],
   },
 ];
@@ -174,36 +203,12 @@ export const SUSPICIOUS_TLDS = new Set([
 // ─── Suspicious URL Path Keywords ──────────────────────────────────────────
 // Path fragments commonly used in phishing landing pages.
 
-export const SUSPICIOUS_PATH_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
-  { pattern: /\/(verify|verification|validate|confirm|secure|security|update|recover|restore|reactivate|unlock)\b/i, label: "account verification path" },
-  { pattern: /\/(login|signin|sign-in|log-in|auth|authenticate)\b/i, label: "login page path" },
-  { pattern: /\/(paypal|google|microsoft|apple|amazon|netflix|facebook|chase|bankofamerica)\b/i, label: "brand name in path" },
-  { pattern: /\/[^/]*\.(php|asp|aspx)\b/i, label: "server-side script endpoint" },
+export const SUSPICIOUS_PATH_PATTERNS: Array<{ pattern: RegExp; label: string; ruleId: RuleId }> = [
+  { pattern: /\/(verify|verification|validate|confirm|secure|security|update|recover|restore|reactivate|unlock)\b/i, label: "account verification path", ruleId: "URL_PATH_VERIFY" },
+  { pattern: /\/(login|signin|sign-in|log-in|auth|authenticate)\b/i, label: "login page path", ruleId: "URL_PATH_LOGIN" },
+  { pattern: /\/(paypal|google|microsoft|apple|amazon|netflix|facebook|chase|bankofamerica)\b/i, label: "brand name in path", ruleId: "URL_PATH_BRAND" },
+  { pattern: /\/[^/]*\.(php|asp|aspx)\b/i, label: "server-side script endpoint", ruleId: "URL_PATH_SCRIPT" },
 ];
-
-// ─── Email-specific Selectors for Gmail DOM ─────────────────────────────────
-// These are the CSS selectors used to extract data from Gmail's rendered HTML.
-// Gmail obfuscates class names; these are the stable ones as of 2025.
-
-export const GMAIL_SELECTORS = {
-  // Email subject line
-  subject: "h2.hP",
-
-  // Sender name and email — the span with email attribute
-  senderSpan: ".go span[email], .gD span[email], span[email]",
-
-  // Reply-To header (only visible if user expands "show details")
-  replyToSection: ".ajz",
-
-  // Email body container
-  emailBody: ".a3s.aiL, .a3s",
-
-  // The "show details" chevron/button
-  detailsToggle: ".ajx",
-
-  // Header detail rows (when details are expanded)
-  headerRows: "td.g2",
-} as const;
 
 // ─── Phase 6: Confusable (Homoglyph) Characters ────────────────────────────
 // Non-ASCII characters that render almost identically to a Latin letter.

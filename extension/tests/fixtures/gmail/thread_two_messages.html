@@ -1,0 +1,37 @@
+<!--
+  SYNTHETIC Gmail-like markup for unit tests. It reproduces the class names and
+  attributes Hookline relies on (h2.hP, div.adn.ads[data-message-id], span.gD[email],
+  div.a3s.aiL, details table) — it is NOT a copy of real Gmail HTML and contains no
+  real email. Thread: an older collapsed message (no body) + the newest expanded one.
+-->
+<div role="main">
+  <h2 class="hP" data-thread-perm-id="thread-f:1">Your account has been suspended</h2>
+
+  <div class="adn ads" data-message-id="#msg-f:111" data-legacy-message-id="aaa111">
+    <div class="gE iv gt">
+      <h3 class="iw"><span class="gD" email="old.sender@example.org" name="Old Sender">Old Sender</span></h3>
+    </div>
+    <!-- collapsed: no body -->
+  </div>
+
+  <div class="adn ads" data-message-id="#msg-f:222" data-legacy-message-id="bbb222">
+    <div class="gE iv gt">
+      <h3 class="iw"><span class="gD" email="security@paypal-alert.example.xyz" name="PayPal Security">PayPal Security</span></h3>
+      <span class="hb">to <span email="me@example.com" name="me">me</span></span>
+      <img class="ajz" aria-label="Show details" aria-expanded="false" />
+    </div>
+    <div class="ii gt">
+      <div class="a3s aiL">
+        <p>Unusual activity detected. Verify your account immediately.</p>
+        <a href="http://paypal-alert.example.xyz/verify">Verify now</a>
+        <a href="https://www.google.com/url?q=https://login-paypal.example.top/signin&amp;sa=D">www.paypal.com</a>
+        <a href="mailto:help@example.com">mail us</a>
+      </div>
+    </div>
+  </div>
+
+  <table class="ajC">
+    <tr><td class="gG"><span class="gI">reply-to:</span></td><td class="gL"><span class="gI"><span email="collector@gmail.com">collector@gmail.com</span></span></td></tr>
+    <tr><td class="gG"><span class="gI">mailed-by:</span></td><td class="gL"><span class="gI">paypal-alert.example.xyz</span></td></tr>
+  </table>
+</div>

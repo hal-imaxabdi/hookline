@@ -1,0 +1,289 @@
+{
+  "kind": "url",
+  "environment": {
+    "hooklineVersion": "1.0.0",
+    "rulesetFingerprint": "03331b21",
+    "engineFingerprint": "52f88df88e1212fe",
+    "node": "v26.13.0",
+    "platform": "win32",
+    "date": "2026-11-06T04:22:07.459Z"
+  },
+  "dataset": {
+    "id": "kaggle-phishing-site-urls",
+    "name": "Phishing Site URLs (Kaggle, taruntiwarihp)",
+    "sourceUrl": "https://www.kaggle.com/datasets/taruntiwarihp/phishing-site-urls",
+    "license": "See the Kaggle dataset page (not restated here).",
+    "file": "data/raw/phishing-site-urls/phishing_site_urls.csv",
+    "sha256": "b1a7c26b354632c80817e10af154c4e5007f9480fb43a8ac2730491500fa2780",
+    "downloadedAt": "2026-11-06",
+    "totalRows": 549346,
+    "unknownLabel": 0,
+    "emptyUrl": 0,
+    "duplicatesRemoved": 42154,
+    "conflictingLabelsDropped": 1,
+    "uniqueUsable": 507191,
+    "inSplit": {
+      "phishing": 57271,
+      "legitimate": 196838
+    }
+  },
+  "sampling": {
+    "method": "Stratified: 25000 per class drawn uniformly without replacement (Fisher–Yates, mulberry32 seed 42)",
+    "seed": 42,
+    "perClass": 25000,
+    "split": "dev",
+    "splitMethod": "FNV-1a(\"hookline-split-v1\" + url) mod 2 (0 = dev, 1 = test); independent of seed",
+    "dedupe": true,
+    "schemePolicy": "as-is",
+    "sampled": 50000,
+    "unparseable": 95,
+    "evaluated": 49905
+  },
+  "config": {
+    "allowlist": false,
+    "allowlistMeta": {
+      "description": "disabled (stage 0)",
+      "size": 0
+    },
+    "positiveClass": "phishing",
+    "flaggedMeans": "verdict ∈ {suspicious, high_risk} (score ≥ 20)"
+  },
+  "metrics": {
+    "tp": 2923,
+    "fp": 542,
+    "tn": 24455,
+    "fn": 21985,
+    "n": 49905,
+    "precision": 0.8435786435786435,
+    "recall": 0.11735185482575879,
+    "falsePositiveRate": 0.02168260191222947,
+    "f1": 0.20604095442850595,
+    "accuracy": 0.5486023444544634
+  },
+  "confidenceIntervals95": {
+    "recall": [
+      0.11341388629628887,
+      0.1214078336673071
+    ],
+    "falsePositiveRate": [
+      0.019949230969202928,
+      0.02356296283485347
+    ]
+  },
+  "thresholdSweep": [
+    {
+      "threshold": 10,
+      "tp": 10679,
+      "fp": 2793,
+      "tn": 22204,
+      "fn": 14229,
+      "n": 49905,
+      "precision": 0.7926811163895487,
+      "recall": 0.42873775493817246,
+      "falsePositiveRate": 0.11173340800896107,
+      "f1": 0.5564877540385618,
+      "accuracy": 0.6589119326720769
+    },
+    {
+      "threshold": 20,
+      "tp": 2923,
+      "fp": 542,
+      "tn": 24455,
+      "fn": 21985,
+      "n": 49905,
+      "precision": 0.8435786435786435,
+      "recall": 0.11735185482575879,
+      "falsePositiveRate": 0.02168260191222947,
+      "f1": 0.20604095442850595,
+      "accuracy": 0.5486023444544634
+    },
+    {
+      "threshold": 30,
+      "tp": 2606,
+      "fp": 119,
+      "tn": 24878,
+      "fn": 22302,
+      "n": 49905,
+      "precision": 0.9563302752293578,
+      "recall": 0.10462502007387185,
+      "falsePositiveRate": 0.004760571268552226,
+      "f1": 0.1886150617015887,
+      "accuracy": 0.5507263801222323
+    },
+    {
+      "threshold": 40,
+      "tp": 1765,
+      "fp": 118,
+      "tn": 24879,
+      "fn": 23143,
+      "n": 49905,
+      "precision": 0.9373340414232607,
+      "recall": 0.07086076762485949,
+      "falsePositiveRate": 0.004720566467976157,
+      "f1": 0.13176066589526336,
+      "accuracy": 0.5338943993587817
+    },
+    {
+      "threshold": 50,
+      "tp": 1525,
+      "fp": 23,
+      "tn": 24974,
+      "fn": 23383,
+      "n": 49905,
+      "precision": 0.9851421188630491,
+      "recall": 0.061225309137626464,
+      "falsePositiveRate": 0.00092011041324959,
+      "f1": 0.11528575748412458,
+      "accuracy": 0.5309888788698527
+    },
+    {
+      "threshold": 60,
+      "tp": 1510,
+      "fp": 12,
+      "tn": 24985,
+      "fn": 23398,
+      "n": 49905,
+      "precision": 0.9921156373193167,
+      "recall": 0.0606230929821744,
+      "falsePositiveRate": 0.00048005760691282955,
+      "f1": 0.11426409383276578,
+      "accuracy": 0.5309087265805029
+    },
+    {
+      "threshold": 70,
+      "tp": 31,
+      "fp": 1,
+      "tn": 24996,
+      "fn": 24877,
+      "n": 49905,
+      "precision": 0.96875,
+      "recall": 0.0012445800546009313,
+      "falsePositiveRate": 0.00004000480057606913,
+      "f1": 0.0024859663191659984,
+      "accuracy": 0.5014928363891393
+    }
+  ],
+  "predictedCategory": {
+    "credential_phishing": {
+      "phishing": 2645,
+      "legitimate": 541
+    },
+    "job_scam": {
+      "phishing": 0,
+      "legitimate": 0
+    },
+    "shopping_scam": {
+      "phishing": 0,
+      "legitimate": 0
+    },
+    "none": {
+      "phishing": 22263,
+      "legitimate": 24456
+    }
+  },
+  "allowlistedItems": {
+    "phishing": 0,
+    "legitimate": 0
+  },
+  "ruleFires": {
+    "URL_PATH_SCRIPT": {
+      "phishing": 4897,
+      "legitimate": 2035
+    },
+    "URL_BRAND_IN_DOMAIN": {
+      "phishing": 1728,
+      "legitimate": 103
+    },
+    "URL_DEEP_SUBDOMAINS": {
+      "phishing": 1630,
+      "legitimate": 172
+    },
+    "URL_PATH_LOGIN": {
+      "phishing": 1633,
+      "legitimate": 4
+    },
+    "URL_LONG_DOMAIN": {
+      "phishing": 1446,
+      "legitimate": 101
+    },
+    "URL_PATH_VERIFY": {
+      "phishing": 1018,
+      "legitimate": 6
+    },
+    "URL_IP_HOST": {
+      "phishing": 820,
+      "legitimate": 1
+    },
+    "URL_MANY_HYPHENS": {
+      "phishing": 769,
+      "legitimate": 41
+    },
+    "URL_SUSPICIOUS_TLD": {
+      "phishing": 672,
+      "legitimate": 9
+    },
+    "URL_PATH_BRAND": {
+      "phishing": 660,
+      "legitimate": 5
+    },
+    "URL_TYPOSQUAT_EDIT": {
+      "phishing": 97,
+      "legitimate": 433
+    },
+    "URL_NO_HTTPS": {
+      "phishing": 20,
+      "legitimate": 0
+    },
+    "URL_PUNYCODE": {
+      "phishing": 16,
+      "legitimate": 3
+    },
+    "URL_TYPOSQUAT_LEET": {
+      "phishing": 4,
+      "legitimate": 0
+    },
+    "URL_TYPOSQUAT_KEYBOARD": {
+      "phishing": 0,
+      "legitimate": 2
+    }
+  },
+  "ablation": [],
+  "allowlistAblation": null,
+  "examples": {
+    "falsePositives": [
+      "tools.ietf.org/html/rfc2857  [URL_TYPOSQUAT_EDIT]",
+      "manta.com/c/mm3mcv2/ion-media-networks-inc  [URL_TYPOSQUAT_EDIT]",
+      "learnonline.cc/clozure/cats.php?c=American+businesspeople  [URL_SUSPICIOUS_TLD, URL_PATH_SCRIPT]",
+      "manta.com/c/mt1kvvz/rj-distributing-inc  [URL_TYPOSQUAT_EDIT]",
+      "tech.groups.yahoo.com/group/semichiganjug/  [URL_BRAND_IN_DOMAIN]",
+      "tools.ietf.org/html/rfc1872  [URL_TYPOSQUAT_EDIT]",
+      "manta.com/c/mmnm4fh/trans-executive-airlines-of-hawaii-inc  [URL_TYPOSQUAT_EDIT]",
+      "hurricanesports.cstv.com/sports/m-baskbl/mtt/larranaga_jim00.html  [URL_TYPOSQUAT_EDIT]",
+      "quebec.cioc.ca/record/MAU0485?UseCICVw=15  [URL_TYPOSQUAT_EDIT]",
+      "tools.ietf.org/html/rfc2516  [URL_TYPOSQUAT_EDIT]",
+      "applemobilenews.blogspot.com/  [URL_BRAND_IN_DOMAIN]",
+      "primecrc.com/  [URL_BRAND_IN_DOMAIN]",
+      "www.tsac.co.uk/javavm/  [URL_TYPOSQUAT_EDIT]",
+      "manta.com/ic/mt6rx22/ca/humpty-dumpty-snack-foods  [URL_TYPOSQUAT_EDIT]",
+      "onelook.com/?w=*que  [URL_TYPOSQUAT_EDIT]"
+    ],
+    "falseNegatives": [
+      "lugaojian.com/js/?us.battle.net/login/en/?ref=ogaezxfus.battle.net/d3/en/index&app=com-d3",
+      "pepperdeybalms.com/sailwin/post.php",
+      "awesometime4you.com/wp-admin/js/cmfr/e29e499a10648f0761f09483011be0d8/",
+      "livejasminci.no-ip.biz:4444/123456.functions",
+      "ndfhj.org/maxe/",
+      "timothyalansalon.com/dropboxtax/2/hitech.document.htm",
+      "bilgeder.org.tr/login-cgi-bin.session-true.confirm5885d80a13c0db1f8e263663d3faee8dcbcd55a50598f04d/8bb265c409eb258e743a8cc3364cfb46/",
+      "salomonsanchez.com/images/insidenow/login/085f53ec6a238e16922edc2b97f421b3/finish.php",
+      "masslung.com/viewfile",
+      "hotclikz.com/ghanalead/products/id.php?l=_JeHFUq_VJOXK0QWHtoGYDw_Product-UserID&amp;userid=abuse@mixparts.com",
+      "embratoor.ahlamontada.com/",
+      "www.elegantwheelslt.com/xmlrpc/CieloFidelidade.com.br/",
+      "captalclubdubai.com/5242dc187ccebf3f0346fbebac9b0540/",
+      "qwestoverseas.com/css/images/prettyPhoto/default/boxMrenewal.php?Email=abuse@zhico.com&amp;.rand=13vqcr8bp0gud&amp;lc=1033&amp;id=64855&amp;mkt=en-us&amp;cbcxt=mai&amp;snsc=1",
+      "ishigakidenzai.co.jp/tradekey.html"
+    ]
+  },
+  "durationMs": 11845
+}
