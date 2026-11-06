@@ -1,5 +1,5 @@
 /**
- * Generate docs/RULES.md from the rule registry, so the paper can cite rule
+ * Generate docs/RULES.md from the rule registry, so rules can be cited by
  * IDs, weights and descriptions that are guaranteed to match the code.
  *
  *   npm run rules:doc

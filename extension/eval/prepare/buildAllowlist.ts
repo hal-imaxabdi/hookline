@@ -5,7 +5,7 @@
  *   npm run prepare:allowlist -- --top=5000
  *
  * Writes src/shared/data/allowlist.generated.ts. The source list ID, date,
- * sha256 and N are embedded so the paper can cite exactly what was used.
+ * sha256 and N are embedded so the exact list used is documented.
  *
  * Domains whose content is written by arbitrary users (site builders, file
  * hosting, form builders, IPFS gateways, URL shorteners) are EXCLUDED —
