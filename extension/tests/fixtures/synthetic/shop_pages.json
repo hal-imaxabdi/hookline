@@ -1,0 +1,98 @@
+{
+  "_notice": "SYNTHETIC — hand-written page snapshots for Hookline unit tests. Domains use reserved/example-style names. Not real stores and not for reporting performance.",
+  "cases": [
+    {
+      "id": "shop-discount-01",
+      "synthetic": true,
+      "rule": "SHOP_HUGE_DISCOUNT",
+      "page": {
+        "url": "https://best-deals-example.shop/product/jacket",
+        "title": "Winter Jacket",
+        "text": "Winter Jacket. Was $200.00, now $29.99. Add to cart. Free shipping. Call us at (555) 123-4567. 100 Main Street, Springfield, IL 62701. We accept Visa and Mastercard.",
+        "links": [],
+        "pricePairs": [{ "was": 200, "now": 29.99 }, { "was": 150, "now": 19.99 }],
+        "hasCheckoutUi": true
+      }
+    },
+    {
+      "id": "shop-payment-01",
+      "synthetic": true,
+      "rule": "SHOP_UNSAFE_PAYMENT",
+      "page": {
+        "url": "https://gadget-store-example.shop/checkout",
+        "title": "Checkout",
+        "text": "Checkout. Your cart: 1 item. Payment: we only accept Bitcoin, Zelle or gift cards. Call (555) 987-6543. 22 Market Road, Austin, TX 73301.",
+        "links": [],
+        "pricePairs": [],
+        "hasCheckoutUi": true
+      }
+    },
+    {
+      "id": "shop-nocontact-01",
+      "synthetic": true,
+      "rule": "SHOP_NO_CONTACT",
+      "page": {
+        "url": "https://trendy-shoes-example.shop/",
+        "title": "Trendy Shoes",
+        "text": "Trendy Shoes. Add to cart. Free shipping worldwide. Pay with Visa, Mastercard or PayPal. Email support through our contact form.",
+        "links": [],
+        "pricePairs": [],
+        "hasCheckoutUi": true
+      }
+    },
+    {
+      "id": "shop-brand-01",
+      "synthetic": true,
+      "rule": "SHOP_BRAND_DOMAIN",
+      "page": {
+        "url": "https://nike-outlet-sale.shop/air",
+        "title": "Air Max Outlet",
+        "text": "Air Max shoes. Add to cart. Pay with Visa. Call (555) 222-3333. 5 Elm Street, Portland, OR 97201.",
+        "links": [],
+        "pricePairs": [],
+        "hasCheckoutUi": true
+      }
+    },
+    {
+      "id": "shop-countdown-01",
+      "synthetic": true,
+      "rule": "SHOP_COUNTDOWN",
+      "page": {
+        "url": "https://flash-sale-example.shop/",
+        "title": "Flash sale",
+        "text": "Flash sale! Offer ends in 00:09:59. Only 2 left in stock! Add to cart. Pay with credit card. Call (555) 444-1212. 9 Oak Avenue, Denver, CO 80202.",
+        "links": [],
+        "pricePairs": [],
+        "hasCheckoutUi": true
+      }
+    }
+  ],
+  "negatives": [
+    {
+      "id": "shop-legit-01",
+      "synthetic": true,
+      "note": "Normal store: modest discount, cards accepted, phone + address — no shopping rule should fire.",
+      "page": {
+        "url": "https://www.example-outdoor-co.com/jackets",
+        "title": "Jackets",
+        "text": "Jackets. Save 20% this week. Add to cart. We accept Visa, Mastercard, PayPal and Apple Pay, and gift cards are available to buy. Customer service: (555) 010-2000. 1200 Harbor Boulevard, Seattle, WA 98101.",
+        "links": [{ "href": "tel:+15550102000", "text": "Call us" }],
+        "pricePairs": [{ "was": 100, "now": 80 }, { "was": 50, "now": 40 }],
+        "hasCheckoutUi": true
+      }
+    },
+    {
+      "id": "shop-notshop-01",
+      "synthetic": true,
+      "note": "A blog post that mentions bitcoin and 90% — not a shop page, so shopping rules must not run.",
+      "page": {
+        "url": "https://blog-example.org/post",
+        "title": "Why bitcoin dropped 90%",
+        "text": "In this article we discuss why bitcoin once dropped 90% off its peak and what that means for investors.",
+        "links": [],
+        "pricePairs": [],
+        "hasCheckoutUi": false
+      }
+    }
+  ]
+}

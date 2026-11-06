@@ -1,0 +1,254 @@
+{
+  "kind": "text",
+  "environment": {
+    "hooklineVersion": "2.0.0",
+    "rulesetFingerprint": "c41cfd80",
+    "engineFingerprint": "4552b5b8eb06301d",
+    "node": "v26.13.0",
+    "platform": "win32",
+    "date": "2026-11-06T05:18:16.601Z"
+  },
+  "dataset": {
+    "id": "emscad",
+    "name": "EMSCAD — Employment Scam Aegean Dataset (Kaggle mirror: Real / Fake Job Posting Prediction)",
+    "sourceUrl": "https://www.kaggle.com/datasets/shivamb/real-or-fake-fake-jobposting-prediction",
+    "citation": "S. Vidros, C. Kolias, G. Kambourakis, L. Akoglu, \"Automatic Detection of Online Recruitment Frauds: Characteristics, Methods, and a Public Dataset,\" Future Internet 9(1):6, 2017.",
+    "file": "data/derived/emscad_scam_messages.csv",
+    "sha256": "eeffa6347fc464fc9e23aa44dc28295211b818e747e0118bb0a9772412817a20",
+    "rows": 17880,
+    "unknownLabel": 0,
+    "inSplit": {
+      "positive": 451,
+      "negative": 8494
+    }
+  },
+  "sampling": {
+    "method": "All rows in the split (no sampling)",
+    "seed": 42,
+    "split": "test",
+    "splitMethod": "FNV-1a(\"hookline-split-v1\" + id + \"|\" + first 64 chars) mod 2",
+    "evaluated": 8945,
+    "textKind": "posting"
+  },
+  "metrics": {
+    "tp": 28,
+    "fp": 6,
+    "tn": 8488,
+    "fn": 423,
+    "n": 8945,
+    "precision": 0.8235294117647058,
+    "recall": 0.06208425720620843,
+    "falsePositiveRate": 0.0007063809748057452,
+    "f1": 0.1154639175257732,
+    "accuracy": 0.9520402459474567
+  },
+  "confidenceIntervals95": {
+    "recall": [
+      0.04330008495762669,
+      0.08826544773556741
+    ],
+    "falsePositiveRate": [
+      0.00032377967847370355,
+      0.0015403947589360235
+    ]
+  },
+  "perCategory": {
+    "credential_phishing": {
+      "tp": 0,
+      "fp": 0,
+      "tn": 8945,
+      "fn": 0,
+      "n": 8945,
+      "precision": 0,
+      "recall": 0,
+      "falsePositiveRate": 0,
+      "f1": 0,
+      "accuracy": 1
+    },
+    "job_scam": {
+      "tp": 28,
+      "fp": 6,
+      "tn": 8488,
+      "fn": 423,
+      "n": 8945,
+      "precision": 0.8235294117647058,
+      "recall": 0.06208425720620843,
+      "falsePositiveRate": 0.0007063809748057452,
+      "f1": 0.1154639175257732,
+      "accuracy": 0.9520402459474567
+    },
+    "shopping_scam": {
+      "tp": 0,
+      "fp": 0,
+      "tn": 8945,
+      "fn": 0,
+      "n": 8945,
+      "precision": 0,
+      "recall": 0,
+      "falsePositiveRate": 0,
+      "f1": 0,
+      "accuracy": 1
+    }
+  },
+  "predictedCategory": {
+    "credential_phishing": {
+      "positive": 0,
+      "negative": 0
+    },
+    "job_scam": {
+      "positive": 28,
+      "negative": 6
+    },
+    "shopping_scam": {
+      "positive": 0,
+      "negative": 0
+    },
+    "none": {
+      "positive": 423,
+      "negative": 8488
+    }
+  },
+  "ruleFires": {
+    "JOB_UNREALISTIC_PAY": {
+      "positive": 28,
+      "negative": 4
+    },
+    "JOB_MOVE_TO_CHAT": {
+      "positive": 0,
+      "negative": 1
+    },
+    "JOB_UPFRONT_FEE": {
+      "positive": 0,
+      "negative": 1
+    },
+    "JOB_URGENCY": {
+      "positive": 0,
+      "negative": 2
+    }
+  },
+  "ablation": [
+    {
+      "rule": "JOB_UPFRONT_FEE",
+      "fires": {
+        "positive": 0,
+        "negative": 1
+      },
+      "metrics": {
+        "tp": 28,
+        "fp": 5,
+        "tn": 8489,
+        "fn": 423,
+        "n": 8945,
+        "precision": 0.8484848484848485,
+        "recall": 0.06208425720620843,
+        "falsePositiveRate": 0.0005886508123381211,
+        "f1": 0.11570247933884298,
+        "accuracy": 0.9521520402459475
+      },
+      "delta": {
+        "recall": 0,
+        "falsePositiveRate": -0.00011773016246762412,
+        "precision": 0.024955436720142665,
+        "f1": 0.00023856181306977642
+      }
+    },
+    {
+      "rule": "JOB_MOVE_TO_CHAT",
+      "fires": {
+        "positive": 0,
+        "negative": 1
+      },
+      "metrics": {
+        "tp": 28,
+        "fp": 5,
+        "tn": 8489,
+        "fn": 423,
+        "n": 8945,
+        "precision": 0.8484848484848485,
+        "recall": 0.06208425720620843,
+        "falsePositiveRate": 0.0005886508123381211,
+        "f1": 0.11570247933884298,
+        "accuracy": 0.9521520402459475
+      },
+      "delta": {
+        "recall": 0,
+        "falsePositiveRate": -0.00011773016246762412,
+        "precision": 0.024955436720142665,
+        "f1": 0.00023856181306977642
+      }
+    },
+    {
+      "rule": "JOB_UNREALISTIC_PAY",
+      "fires": {
+        "positive": 28,
+        "negative": 4
+      },
+      "metrics": {
+        "tp": 0,
+        "fp": 2,
+        "tn": 8492,
+        "fn": 451,
+        "n": 8945,
+        "precision": 0,
+        "recall": 0,
+        "falsePositiveRate": 0.0002354603249352484,
+        "f1": 0,
+        "accuracy": 0.949357182783678
+      },
+      "delta": {
+        "recall": -0.06208425720620843,
+        "falsePositiveRate": -0.00047092064987049677,
+        "precision": -0.8235294117647058,
+        "f1": -0.1154639175257732
+      }
+    },
+    {
+      "rule": "JOB_URGENCY",
+      "fires": {
+        "positive": 0,
+        "negative": 2
+      },
+      "metrics": {
+        "tp": 28,
+        "fp": 6,
+        "tn": 8488,
+        "fn": 423,
+        "n": 8945,
+        "precision": 0.8235294117647058,
+        "recall": 0.06208425720620843,
+        "falsePositiveRate": 0.0007063809748057452,
+        "f1": 0.1154639175257732,
+        "accuracy": 0.9520402459474567
+      },
+      "delta": {
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "precision": 0,
+        "f1": 0
+      }
+    }
+  ],
+  "examples": {
+    "falsePositives": [
+      "id 3029: JOB_MOVE_TO_CHAT \"While we currently communicate with customers via email and phone, your responsibilities will include creative thinking about future additional or alternative c\"",
+      "id 5336: JOB_UNREALISTIC_PAY earn $150,000 · \"from home\"",
+      "id 8012: JOB_UNREALISTIC_PAY $120/hour · \"from home\"",
+      "id 9435: JOB_UPFRONT_FEE \"…for raises• Full coverage of Work Permit fee and visa• English speaking Thai consult…\"",
+      "id 13904: JOB_UNREALISTIC_PAY £47 per hour · \"flexible hours\"",
+      "id 14138: JOB_UNREALISTIC_PAY Make up to $5,000 · \"from your home\""
+    ],
+    "falseNegatives": [
+      "id 145",
+      "id 174",
+      "id 216",
+      "id 585",
+      "id 607",
+      "id 662",
+      "id 741",
+      "id 813",
+      "id 817",
+      "id 860"
+    ]
+  },
+  "durationMs": 22201
+}

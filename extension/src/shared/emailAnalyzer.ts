@@ -1,329 +1,262 @@
-import {
-  EmailAnalysisResult,
-  AnalyzedLink,
-  EvidenceItem,
-  RiskLevel,
-  Confidence,
-} from "./types";
+/**
+ * Email analyzer.
+ *
+ * Runs entirely locally — the email body is never sent anywhere. Only the
+ * sender's domain (and link domains, if the user enables threat intel) can
+ * leave the machine, and only through the background worker.
+ */
 
-import {
-  URGENCY_PATTERNS,
-  CREDENTIAL_PATTERNS,
-  KNOWN_BRANDS,
-  SUSPICIOUS_TLDS,
-  SUSPICIOUS_PATH_PATTERNS,
-} from "./detectionRules";
+import type { EmailAnalysisResult, AnalyzedLink, EvidenceItem, RawEmailData } from "./types";
+import { URGENCY_PATTERNS, CREDENTIAL_PATTERNS, KNOWN_BRANDS, SUSPICIOUS_TLDS } from "./detectionRules";
+import { scoreEvidence, makeEvidence } from "./riskEngine";
+import type { RuleId } from "./ruleRegistry";
+import { getRegistrableDomain, getTld, officialBrandFor } from "./domainUtils";
+import { analyzeUrl } from "./urlAnalyzer";
+import { detectJobScam } from "./scamDetectors";
+import { FREE_MAIL_DOMAINS } from "./scamPatterns";
+import { isAllowlisted } from "./allowlist";
 
-import { scoreEvidence } from "./riskEngine";
-import { getRegistrableDomain } from "./urlAnalyzer";
+export type { RawEmailData } from "./types";
 
-// ─── Input shape from content script ───────────────────────────────────────
-
-export interface RawEmailData {
-  subject: string;
-  sender: string;
-  senderEmail: string;
-  replyTo: string;
-  bodyText: string;
-  links: Array<{ href: string; text: string; domain: string }>;
-  timestamp: string;
+export interface AnalyzeEmailOptions {
+  disabledRules?: ReadonlySet<RuleId>;
+  useAllowlist?: boolean;
 }
 
 // ─── Main Entry Point ───────────────────────────────────────────────────────
 
-export function analyzeEmail(raw: RawEmailData): EmailAnalysisResult {
+export function collectEmailEvidence(raw: RawEmailData, opts: AnalyzeEmailOptions = {}): {
+  evidence: EvidenceItem[];
+  links: AnalyzedLink[];
+  senderDomain: string;
+} {
   const evidence: EvidenceItem[] = [];
-
   const senderDomain = extractDomain(raw.senderEmail);
-  const replyToDomain = raw.replyTo ? extractDomain(raw.replyTo) : "";
+  const text = `${raw.subject}\n${raw.bodyText}`;
 
-  // ── Run all checks ─────────────────────────────────────────────────────
+  checkReplyTo(raw, senderDomain, evidence);
+  const urgencyCount = checkUrgencyLanguage(text, evidence);
+  const credential = checkCredentialHarvesting(text, evidence);
+  // "Pressure" = a credential request, or ≥ 2 distinct urgency patterns.
+  // A single weak phrase ("update your account preferences") isn't enough.
+  checkBrandImpersonation(raw, senderDomain, urgencyCount >= 2 || credential, evidence);
+  checkSenderTld(senderDomain, evidence);
 
-  checkSenderDomainMismatch(raw.senderEmail, raw.replyTo, senderDomain, replyToDomain, evidence);
-  checkBrandImpersonation(raw.subject, raw.senderEmail, raw.bodyText, senderDomain, evidence);
-  checkUrgencyLanguage(raw.subject, raw.bodyText, evidence);
-  checkCredentialHarvesting(raw.subject, raw.bodyText, evidence);
-  checkSuspiciousTld(senderDomain, evidence);
-
-  // ── Analyze links ──────────────────────────────────────────────────────
-
-  const analyzedLinks = raw.links.map((link) =>
-    analyzeLink(link.href, link.text, link.domain, senderDomain)
+  evidence.push(
+    ...detectJobScam({
+      kind: "email",
+      subject: raw.subject,
+      body: raw.bodyText,
+      senderEmail: raw.senderEmail,
+      senderName: raw.sender,
+    })
   );
 
-  const suspiciousLinkCount = analyzedLinks.filter((l) => l.isSuspicious).length;
-  if (suspiciousLinkCount > 0) {
-    evidence.push({
-      type: "suspicious_link",
-      severity: suspiciousLinkCount >= 3 ? "high" : "medium",
-      title: `${suspiciousLinkCount} suspicious link${suspiciousLinkCount > 1 ? "s" : ""} found`,
-      description: `${suspiciousLinkCount} of ${raw.links.length} links in this email point to domains that do not match the sender's domain or are otherwise suspicious.`,
-      detail: analyzedLinks
-        .filter((l) => l.isSuspicious)
-        .map((l) => l.domain)
-        .slice(0, 3)
-        .join(", "),
-    });
+  const links = dedupeLinks(raw.links).map((l) => analyzeEmailLink(l.href, l.text, opts));
+  const flagged = links.filter((l) => l.isSuspicious);
+  if (flagged.length > 0) {
+    const anyHigh = flagged.some((l) => l.verdict === "high_risk");
+    evidence.push(
+      makeEvidence(
+        "EMAIL_SUSPICIOUS_LINKS",
+        `${flagged.length} suspicious link${flagged.length > 1 ? "s" : ""} in this email`,
+        `${flagged.length} of ${links.length} links point to risky destinations (look-alike domains, brand names on unofficial sites, login pages on unknown domains, or link text that hides the real address). See the Links tab.`,
+        flagged.map((l) => l.domain).slice(0, 3).join(", "),
+        anyHigh || flagged.length >= 3 ? "high" : "medium"
+      )
+    );
   }
+  return { evidence, links, senderDomain };
+}
 
-  // ── Compute verdict (Phase 9 risk engine) ───────────────────────────────
-
-  const { verdict, confidence, riskScore } = scoreEvidence(evidence);
-
+export function analyzeEmail(raw: RawEmailData, opts: AnalyzeEmailOptions = {}): EmailAnalysisResult {
+  const { evidence, links, senderDomain } = collectEmailEvidence(raw, opts);
+  const allowlisted = opts.useAllowlist !== false && senderDomain !== "" && isAllowlisted(senderDomain);
+  const scored = scoreEvidence(evidence, { disabledRules: opts.disabledRules, allowlisted });
   return {
     subject: raw.subject,
     sender: raw.sender,
     senderEmail: raw.senderEmail,
     senderDomain,
     replyTo: raw.replyTo,
-    verdict,
-    confidence,
-    riskScore,
-    evidenceScore: evidence.length,
-    evidenceMax: 6,
-    evidence,
-    links: analyzedLinks,
-    domainInfo: null, // Phase 7–8 will populate this from backend
+    verdict: scored.verdict,
+    confidence: scored.confidence,
+    riskScore: scored.riskScore,
+    evidence: scored.active,
+    suppressedEvidence: scored.suppressed,
+    category: scored.category,
+    links,
+    domainInfo: null,
     analyzedAt: new Date().toISOString(),
   };
 }
 
-// ─── Check: Sender Domain Mismatch ─────────────────────────────────────────
-// If Reply-To domain is different from From domain, that is a classic
-// spoofing indicator. Legitimate companies don't do this.
+// ─── Reply-To ──────────────────────────────────────────────────────────────
 
-function checkSenderDomainMismatch(
-  senderEmail: string,
-  replyTo: string,
-  senderDomain: string,
-  replyToDomain: string,
-  evidence: EvidenceItem[]
-): void {
-  if (!replyTo || !replyToDomain) return;
-  if (senderDomain === replyToDomain) return;
-
-  // Ignore if Reply-To is clearly a legit email service
-  const safeReplyDomains = ["gmail.com", "outlook.com", "yahoo.com", "hotmail.com"];
-  if (safeReplyDomains.includes(replyToDomain)) return;
-
-  evidence.push({
-    type: "sender_mismatch",
-    severity: "high",
-    title: "Reply-To domain differs from sender domain",
-    description: `Email is from ${senderDomain} but replies go to ${replyToDomain}. Legitimate companies send and receive from the same domain.`,
-    detail: `From: ${senderEmail} | Reply-To: ${replyTo}`,
-  });
+function checkReplyTo(raw: RawEmailData, senderDomain: string, evidence: EvidenceItem[]): void {
+  const replyDomain = extractDomain(raw.replyTo);
+  if (!raw.replyTo || !replyDomain || !senderDomain) return;
+  const sReg = getRegistrableDomain(senderDomain);
+  const rReg = getRegistrableDomain(replyDomain);
+  if (sReg === rReg) return;
+  const senderFree = FREE_MAIL_DOMAINS.has(sReg);
+  const replyFree = FREE_MAIL_DOMAINS.has(rReg);
+  evidence.push(
+    makeEvidence(
+      "EMAIL_REPLYTO_MISMATCH",
+      replyFree && !senderFree ? "Replies go to a free webmail address" : "Replies go to a different domain",
+      replyFree && !senderFree
+        ? `The email is sent from ${senderDomain}, but hitting Reply sends your answer to a free ${rReg} address. Companies don't route replies to personal webmail — scammers do, so they can keep talking to you after the fake sender is blocked.`
+        : `The email is from ${senderDomain} but replies go to ${replyDomain}. Legitimate organisations normally send and receive on the same domain.`,
+      `From: ${raw.senderEmail} | Reply-To: ${raw.replyTo}`,
+      senderFree && replyFree ? "medium" : "high"
+    )
+  );
 }
 
-// ─── Check: Brand Impersonation ─────────────────────────────────────────────
-// Check if the email claims to be from a known brand but the actual
-// sending domain is not that brand's official domain.
+// ─── Brand impersonation ───────────────────────────────────────────────────
 
-function checkBrandImpersonation(
-  subject: string,
-  senderEmail: string,
-  bodyText: string,
-  senderDomain: string,
-  evidence: EvidenceItem[]
-): void {
-  const contentToCheck = `${subject} ${senderEmail} ${bodyText}`.toLowerCase();
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
-  for (const brand of KNOWN_BRANDS) {
-    // Check if the content mentions this brand
-    const mentionsBrand = brand.keywords.some((kw) =>
-      contentToCheck.includes(kw.toLowerCase())
-    );
+const BRAND_MATCHERS = KNOWN_BRANDS.map((b) => ({
+  brand: b,
+  re: new RegExp(`\\b(${[b.brand, ...b.keywords].map(escapeRe).join("|")})\\b`, "i"),
+}));
 
-    if (!mentionsBrand) continue;
+function checkBrandImpersonation(raw: RawEmailData, senderDomain: string, pressure: boolean, evidence: EvidenceItem[]): void {
+  if (!senderDomain) return;
+  const officialOfSender = officialBrandFor(senderDomain);
+  const identity = `${raw.sender} ${raw.senderEmail.split("@")[0] ?? ""}`;
 
-    // Check if the sender is actually from the official domain
-    const isOfficialDomain = brand.officialDomains.some(
-      (d) => senderDomain === d || senderDomain.endsWith(`.${d}`)
-    );
+  for (const { brand, re } of BRAND_MATCHERS) {
+    if (officialOfSender === brand.brand) continue;
 
-    if (!isOfficialDomain) {
-      evidence.push({
-        type: "brand_impersonation",
-        severity: "high",
-        title: `Possible ${brand.brand} impersonation`,
-        description: `This email references ${brand.brand} but was not sent from an official ${brand.brand} domain. Official domains: ${brand.officialDomains.join(", ")}.`,
-        detail: `Sent from: ${senderDomain}`,
-      });
-      break; // One brand match is enough
+    // Strong: the sender presents itself as the brand.
+    if (re.test(identity)) {
+      evidence.push(
+        makeEvidence(
+          "EMAIL_BRAND_IMPERSONATION",
+          `Claims to be ${brand.brand}, but isn't sent from ${brand.brand}`,
+          `The sender name or address says "${brand.brand}", but the email came from ${senderDomain}, which is not a ${brand.brand} domain (${brand.officialDomains.slice(0, 3).join(", ")}).`,
+          `From: ${raw.sender} <${raw.senderEmail}>`,
+          "high"
+        )
+      );
+      return;
+    }
+
+    // Weaker: the brand is named in the subject/body AND the email pressures you
+    // or asks for credentials. A newsletter that merely mentions Apple doesn't fire.
+    if (pressure && re.test(`${raw.subject}\n${raw.bodyText}`)) {
+      evidence.push(
+        makeEvidence(
+          "EMAIL_BRAND_IMPERSONATION",
+          `Uses ${brand.brand}'s name to pressure you`,
+          `This email talks about your ${brand.brand} account with urgent or credential-requesting language, but it was sent from ${senderDomain}, not from ${brand.brand}.`,
+          `Sent from: ${senderDomain}`,
+          "medium"
+        )
+      );
+      return;
     }
   }
 }
 
-// ─── Check: Urgency Language ────────────────────────────────────────────────
+// ─── Language checks ───────────────────────────────────────────────────────
 
-function checkUrgencyLanguage(
-  subject: string,
-  bodyText: string,
-  evidence: EvidenceItem[]
-): void {
-  const text = `${subject} ${bodyText}`;
-  const matches: string[] = [];
-
-  for (const { pattern, label } of URGENCY_PATTERNS) {
-    if (pattern.test(text)) {
-      matches.push(label);
-    }
-  }
-
-  if (matches.length === 0) return;
-
-  evidence.push({
-    type: "credential_harvesting", // Reusing the closest type
-    severity: matches.length >= 2 ? "medium" : "low",
-    title: "Urgency and pressure language detected",
-    description: `The email uses psychological pressure tactics designed to rush you into action without thinking. Patterns found: ${matches.slice(0, 3).join(", ")}.`,
-    detail: matches.join(", "),
-  });
+function checkUrgencyLanguage(text: string, evidence: EvidenceItem[]): number {
+  const matches = URGENCY_PATTERNS.filter(({ pattern }) => pattern.test(text)).map((p) => p.label);
+  if (matches.length === 0) return 0;
+  evidence.push(
+    makeEvidence(
+      "EMAIL_URGENCY",
+      "Urgency and pressure language",
+      `The email uses pressure tactics designed to rush you into acting without thinking: ${matches.slice(0, 3).join(", ")}.`,
+      matches.join(", "),
+      matches.length >= 2 ? "medium" : "low"
+    )
+  );
+  return matches.length;
 }
 
-// ─── Check: Credential Harvesting ──────────────────────────────────────────
-
-function checkCredentialHarvesting(
-  subject: string,
-  bodyText: string,
-  evidence: EvidenceItem[]
-): void {
-  const text = `${subject} ${bodyText}`;
-  const matches: string[] = [];
-
-  for (const { pattern, label } of CREDENTIAL_PATTERNS) {
-    if (pattern.test(text)) {
-      matches.push(label);
-    }
-  }
-
-  if (matches.length === 0) return;
-
-  evidence.push({
-    type: "credential_harvesting",
-    severity: "medium",
-    title: "Credential harvesting language",
-    description: `This email attempts to collect sensitive information or direct you to a login page. Patterns found: ${matches.slice(0, 2).join(", ")}.`,
-    detail: matches.join(", "),
-  });
+function checkCredentialHarvesting(text: string, evidence: EvidenceItem[]): boolean {
+  const matches = CREDENTIAL_PATTERNS.filter(({ pattern }) => pattern.test(text)).map((p) => p.label);
+  if (matches.length === 0) return false;
+  evidence.push(
+    makeEvidence(
+      "EMAIL_CREDENTIAL_REQUEST",
+      "Asks for passwords or account details",
+      `This email tries to collect sensitive information or send you to a login page: ${matches.slice(0, 2).join(", ")}.`,
+      matches.join(", ")
+    )
+  );
+  return true;
 }
 
-// ─── Check: Suspicious TLD ─────────────────────────────────────────────────
-
-function checkSuspiciousTld(domain: string, evidence: EvidenceItem[]): void {
-  if (!domain) return;
-
+function checkSenderTld(domain: string, evidence: EvidenceItem[]): void {
   const tld = getTld(domain);
   if (!tld || !SUSPICIOUS_TLDS.has(tld)) return;
-
-  evidence.push({
-    type: "suspicious_tld",
-    severity: "medium",
-    title: `Sender uses high-risk TLD (${tld})`,
-    description: `The ${tld} top-level domain is disproportionately associated with phishing and spam activity. Legitimate companies rarely use it.`,
-    detail: `Domain: ${domain}`,
-  });
+  evidence.push(
+    makeEvidence(
+      "EMAIL_SENDER_TLD",
+      `Sender uses a frequently abused domain ending (${tld})`,
+      `The ${tld} top-level domain is disproportionately used for spam and phishing.`,
+      `Domain: ${domain}`
+    )
+  );
 }
 
-// ─── Analyze a single link ──────────────────────────────────────────────────
+// ─── Links ─────────────────────────────────────────────────────────────────
 
-export function analyzeLink(
-  href: string,
-  text: string,
-  domain: string,
-  senderDomain: string
-): AnalyzedLink {
-  const flags: string[] = [];
+function dedupeLinks(links: RawEmailData["links"]): RawEmailData["links"] {
+  const seen = new Set<string>();
+  return links.filter((l) => (seen.has(l.href) ? false : (seen.add(l.href), true)));
+}
 
-  // Domain mismatch: link goes somewhere different from sender
-  // Compare REGISTRABLE domains, not raw hostnames — a link to
-  // "www.linkedin.com" from a sender at "linkedin.com" is the same
-  // organization, not a mismatch. Only flag if the underlying owner differs.
-  const senderReg = getRegistrableDomain(senderDomain);
-  const linkReg = getRegistrableDomain(domain);
-  if (senderReg && linkReg && linkReg !== senderReg) {
-    // Only flag if sender was a non-generic domain
-    const genericDomains = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com"];
-    if (!genericDomains.includes(senderReg)) {
-      flags.push(`Domain mismatch: link goes to ${domain}, email from ${senderDomain}`);
-    }
+/** A domain-looking string in link text ("www.paypal.com", "https://x.y/z"). */
+function domainInText(text: string): string {
+  const t = text.trim().toLowerCase();
+  const m = t.match(/^(?:https?:\/\/)?((?:[a-z0-9-]+\.)+[a-z]{2,})(?:[/:?#]\S*)?$/);
+  return m ? m[1] : "";
+}
+
+export function analyzeEmailLink(href: string, text: string, opts: AnalyzeEmailOptions = {}): AnalyzedLink {
+  const r = analyzeUrl(href, { disabledRules: opts.disabledRules, useAllowlist: opts.useAllowlist });
+  const flags = r.evidence.map((e) => e.title);
+  let verdict = r.verdict;
+
+  const shown = domainInText(text);
+  if (shown && r.domain && getRegistrableDomain(shown) !== getRegistrableDomain(r.domain)) {
+    flags.unshift(`Link text shows ${shown} but it actually goes to ${r.domain}`);
+    verdict = "high_risk";
   }
-
-  // Suspicious TLD on the link domain
-  const tld = getTld(domain);
-  if (tld && SUSPICIOUS_TLDS.has(tld)) {
-    flags.push(`Suspicious TLD: ${tld}`);
-  }
-
-  // Suspicious path
-  for (const { pattern, label } of SUSPICIOUS_PATH_PATTERNS) {
-    if (pattern.test(href)) {
-      flags.push(`Suspicious path: ${label}`);
-      break;
-    }
-  }
-
-  // IP address instead of domain name
-  if (/^https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(href)) {
-    flags.push("IP address used instead of domain name");
-  }
-
-  // Link text says one domain but href goes to another
-  const textDomain = extractDomain(text);
-  if (textDomain && domain && textDomain !== domain) {
-    flags.push(`Link text shows ${textDomain} but actually goes to ${domain}`);
-  }
-
-  // Brand impersonation in link domain
-  for (const brand of KNOWN_BRANDS) {
-    const isOfficialDomain = brand.officialDomains.some(
-      (d) => domain === d || domain.endsWith(`.${d}`)
-    );
-    if (!isOfficialDomain) {
-      const impersonates = brand.keywords.some((kw) =>
-        domain.toLowerCase().includes(kw.toLowerCase())
-      );
-      if (impersonates) {
-        flags.push(`Possible ${brand.brand} impersonation in link domain`);
-        break;
-      }
-    }
-  }
-
-  const isSuspicious = flags.length > 0;
-  const verdict: RiskLevel =
-    flags.length >= 2 ? "high_risk" : isSuspicious ? "suspicious" : "safe";
+  if (r.error) flags.push(r.error);
 
   return {
     href,
     text,
-    domain,
-    verdict,
-    isSuspicious,
+    domain: r.domain,
+    verdict: verdict === "unknown" ? "safe" : verdict,
+    isSuspicious: verdict === "suspicious" || verdict === "high_risk",
     flags,
   };
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+/** Back-compat helper: per-link analysis given a pre-parsed domain. */
+export function analyzeLink(href: string, text: string, _domain: string, _senderDomain: string): AnalyzedLink {
+  return analyzeEmailLink(href, text);
+}
 
-function extractDomain(emailOrUrl: string): string {
+export function extractDomain(emailOrUrl: string): string {
   if (!emailOrUrl) return "";
-
-  // Email address
-  if (emailOrUrl.includes("@")) {
-    return emailOrUrl.split("@")[1]?.toLowerCase().trim() ?? "";
+  if (emailOrUrl.includes("@") && !emailOrUrl.includes("://")) {
+    return emailOrUrl.split("@").pop()?.toLowerCase().trim().replace(/[>\s]+$/, "") ?? "";
   }
-
-  // URL
   try {
     return new URL(emailOrUrl).hostname.toLowerCase();
   } catch {
     return "";
   }
-}
-
-function getTld(domain: string): string {
-  const parts = domain.split(".");
-  if (parts.length < 2) return "";
-  return `.${parts[parts.length - 1]}`;
 }

@@ -1,0 +1,302 @@
+{
+  "kind": "url",
+  "environment": {
+    "hooklineVersion": "2.0.0",
+    "rulesetFingerprint": "c41cfd80",
+    "engineFingerprint": "4552b5b8eb06301d",
+    "node": "v26.13.0",
+    "platform": "win32",
+    "date": "2026-11-06T05:17:23.039Z"
+  },
+  "dataset": {
+    "id": "phiusiil",
+    "name": "PhiUSIIL Phishing URL Dataset (UCI #967)",
+    "sourceUrl": "https://archive.ics.uci.edu/dataset/967/phiusiil+phishing+url+dataset",
+    "license": "CC BY 4.0",
+    "citation": "A. Prasad and S. Chandra, \"PhiUSIIL: A diverse security profile empowered phishing URL detection framework based on similarity index and incremental learning,\" Computers & Security, vol. 136, 2024, 103545.",
+    "file": "data/raw/phiusiil/PhiUSIIL_Phishing_URL_Dataset.csv",
+    "sha256": "a236549cd369cd80bd478ff8e1779cbf44c58d5c3f79f7a51a1adbed7d06d1c6",
+    "downloadedAt": "2026-11-06",
+    "totalRows": 235795,
+    "unknownLabel": 0,
+    "emptyUrl": 0,
+    "duplicatesRemoved": 425,
+    "conflictingLabelsDropped": 0,
+    "uniqueUsable": 235370,
+    "inSplit": {
+      "phishing": 50297,
+      "legitimate": 67555
+    }
+  },
+  "sampling": {
+    "method": "Stratified: 25000 per class drawn uniformly without replacement (Fisher–Yates, mulberry32 seed 42)",
+    "seed": 42,
+    "perClass": 25000,
+    "split": "test",
+    "splitMethod": "FNV-1a(\"hookline-split-v1\" + url) mod 2 (0 = dev, 1 = test); independent of seed",
+    "dedupe": true,
+    "schemePolicy": "as-is",
+    "sampled": 50000,
+    "unparseable": 0,
+    "evaluated": 50000
+  },
+  "config": {
+    "allowlist": false,
+    "allowlistMeta": {
+      "source": "Tranco",
+      "listId": "K9YYW",
+      "listUrl": "https://tranco-list.eu/list/K9YYW",
+      "downloadedAt": "2026-11-06",
+      "sha256": "b4df866fca498c914e91b8cc01795b3902cfdf9c3089c3fc47e3450653210768",
+      "topN": 10000,
+      "size": 9846,
+      "excludedUserContent": 35,
+      "droppedNoRegistrableDomain": 119,
+      "description": "Tranco K9YYW top 10000 (9846 registrable domains; user-content hosts and shorteners excluded)"
+    },
+    "positiveClass": "phishing",
+    "flaggedMeans": "verdict ∈ {suspicious, high_risk} (score ≥ 20)"
+  },
+  "metrics": {
+    "tp": 6193,
+    "fp": 58,
+    "tn": 24942,
+    "fn": 18807,
+    "n": 50000,
+    "precision": 0.99072148456247,
+    "recall": 0.24772,
+    "falsePositiveRate": 0.00232,
+    "f1": 0.39633931714185144,
+    "accuracy": 0.6227
+  },
+  "confidenceIntervals95": {
+    "recall": [
+      0.2424078642085444,
+      0.25310965373867833
+    ],
+    "falsePositiveRate": [
+      0.001795252189878971,
+      0.0029976696904674286
+    ]
+  },
+  "thresholdSweep": [
+    {
+      "threshold": 10,
+      "tp": 16633,
+      "fp": 58,
+      "tn": 24942,
+      "fn": 8367,
+      "n": 50000,
+      "precision": 0.9965250733928465,
+      "recall": 0.66532,
+      "falsePositiveRate": 0.00232,
+      "f1": 0.7979180158787268,
+      "accuracy": 0.8315
+    },
+    {
+      "threshold": 20,
+      "tp": 6193,
+      "fp": 58,
+      "tn": 24942,
+      "fn": 18807,
+      "n": 50000,
+      "precision": 0.99072148456247,
+      "recall": 0.24772,
+      "falsePositiveRate": 0.00232,
+      "f1": 0.39633931714185144,
+      "accuracy": 0.6227
+    },
+    {
+      "threshold": 30,
+      "tp": 3724,
+      "fp": 5,
+      "tn": 24995,
+      "fn": 21276,
+      "n": 50000,
+      "precision": 0.9986591579511933,
+      "recall": 0.14896,
+      "falsePositiveRate": 0.0002,
+      "f1": 0.25925023495422744,
+      "accuracy": 0.57438
+    },
+    {
+      "threshold": 40,
+      "tp": 1327,
+      "fp": 5,
+      "tn": 24995,
+      "fn": 23673,
+      "n": 50000,
+      "precision": 0.9962462462462462,
+      "recall": 0.05308,
+      "falsePositiveRate": 0.0002,
+      "f1": 0.10078991341333739,
+      "accuracy": 0.52644
+    },
+    {
+      "threshold": 50,
+      "tp": 681,
+      "fp": 0,
+      "tn": 25000,
+      "fn": 24319,
+      "n": 50000,
+      "precision": 1,
+      "recall": 0.02724,
+      "falsePositiveRate": 0,
+      "f1": 0.05303531793933258,
+      "accuracy": 0.51362
+    },
+    {
+      "threshold": 60,
+      "tp": 198,
+      "fp": 0,
+      "tn": 25000,
+      "fn": 24802,
+      "n": 50000,
+      "precision": 1,
+      "recall": 0.00792,
+      "falsePositiveRate": 0,
+      "f1": 0.015715532978807845,
+      "accuracy": 0.50396
+    },
+    {
+      "threshold": 70,
+      "tp": 67,
+      "fp": 0,
+      "tn": 25000,
+      "fn": 24933,
+      "n": 50000,
+      "precision": 1,
+      "recall": 0.00268,
+      "falsePositiveRate": 0,
+      "f1": 0.005345673594766027,
+      "accuracy": 0.50134
+    }
+  ],
+  "predictedCategory": {
+    "credential_phishing": {
+      "phishing": 1256,
+      "legitimate": 8
+    },
+    "job_scam": {
+      "phishing": 0,
+      "legitimate": 0
+    },
+    "shopping_scam": {
+      "phishing": 0,
+      "legitimate": 0
+    },
+    "none": {
+      "phishing": 23744,
+      "legitimate": 24992
+    }
+  },
+  "allowlistedItems": {
+    "phishing": 522,
+    "legitimate": 646
+  },
+  "ruleFires": {
+    "URL_NO_HTTPS": {
+      "phishing": 13037,
+      "legitimate": 0
+    },
+    "URL_SUSPICIOUS_TLD": {
+      "phishing": 2516,
+      "legitimate": 21
+    },
+    "URL_LONG_DOMAIN": {
+      "phishing": 2251,
+      "legitimate": 6
+    },
+    "URL_MANY_HYPHENS": {
+      "phishing": 1325,
+      "legitimate": 24
+    },
+    "URL_PATH_SCRIPT": {
+      "phishing": 975,
+      "legitimate": 0
+    },
+    "URL_DEEP_SUBDOMAINS": {
+      "phishing": 562,
+      "legitimate": 0
+    },
+    "URL_PATH_LOGIN": {
+      "phishing": 556,
+      "legitimate": 0
+    },
+    "URL_BRAND_IN_DOMAIN": {
+      "phishing": 427,
+      "legitimate": 5
+    },
+    "URL_IP_HOST": {
+      "phishing": 185,
+      "legitimate": 0
+    },
+    "URL_PATH_VERIFY": {
+      "phishing": 88,
+      "legitimate": 0
+    },
+    "URL_PATH_BRAND": {
+      "phishing": 76,
+      "legitimate": 0
+    },
+    "URL_TYPOSQUAT_EDIT": {
+      "phishing": 45,
+      "legitimate": 3
+    },
+    "URL_PUNYCODE": {
+      "phishing": 32,
+      "legitimate": 0
+    },
+    "URL_REDIRECTOR": {
+      "phishing": 4,
+      "legitimate": 0
+    },
+    "URL_TYPOSQUAT_LEET": {
+      "phishing": 1,
+      "legitimate": 0
+    },
+    "URL_MIXED_SCRIPT": {
+      "phishing": 1,
+      "legitimate": 0
+    }
+  },
+  "ablation": [],
+  "allowlistAblation": null,
+  "examples": {
+    "falsePositives": [
+      "https://www.probloggertips.xyz  [URL_SUSPICIOUS_TLD]",
+      "https://www.nuevaguia.xyz  [URL_SUSPICIOUS_TLD]",
+      "https://www.saint-amand-les-eaux.fr  [URL_MANY_HYPHENS]",
+      "https://www.enjoy-the-life-baby.com  [URL_MANY_HYPHENS]",
+      "https://www.miles-and-more-kreditkarte.com  [URL_MANY_HYPHENS]",
+      "https://www.chase.worcs.sch.uk  [URL_BRAND_IN_DOMAIN]",
+      "https://www.ihr-immobilienmakler-in-heidelberg.de  [URL_LONG_DOMAIN, URL_MANY_HYPHENS]",
+      "https://www.izadi.xyz  [URL_SUSPICIOUS_TLD]",
+      "https://www.clowns-sans-frontieres-france.org  [URL_MANY_HYPHENS]",
+      "https://www.amazonias.net  [URL_TYPOSQUAT_EDIT]",
+      "https://www.kittenbot.cc  [URL_SUSPICIOUS_TLD]",
+      "https://www.g-o-o-d.eu  [URL_MANY_HYPHENS]",
+      "https://www.where-are-they-now.co.uk  [URL_MANY_HYPHENS]",
+      "https://www.googlefight.com  [URL_BRAND_IN_DOMAIN]",
+      "https://www.european-flying-car-association.org  [URL_MANY_HYPHENS]"
+    ],
+    "falseNegatives": [
+      "https://daycoval.facildepagar.com.br/#/inicio",
+      "https://obabanter36.web.app/",
+      "http://emelicker-wixsite-com.usrfiles.com/html/0e472f_4d9b2a88f72eb4191a8eb158b004ca1f.html",
+      "http://www.cosmetic1.4code.se",
+      "http://www.f0594823.xsph.ru",
+      "http://www.mining-help.ru",
+      "http://www.piratenbucht.eu",
+      "http://www.hostingerapp.com",
+      "http://www.spbutoto.com",
+      "https://maildinshaakckjnw529.web.app/",
+      "http://ixiework.com/secure3a/ch/",
+      "http://bit.do/sicurezza3dscarte",
+      "https://www.systemathailand.com",
+      "http://anilreddydev.github.io/facebookloginpageclone",
+      "https://maildinshaakckjnw510.firebaseapp.com/"
+    ]
+  },
+  "durationMs": 32027
+}

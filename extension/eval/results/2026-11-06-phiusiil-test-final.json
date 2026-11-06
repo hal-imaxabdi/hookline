@@ -1,0 +1,739 @@
+{
+  "kind": "url",
+  "environment": {
+    "hooklineVersion": "2.0.0",
+    "rulesetFingerprint": "c41cfd80",
+    "engineFingerprint": "4552b5b8eb06301d",
+    "node": "v26.13.0",
+    "platform": "win32",
+    "date": "2026-11-06T05:16:20.478Z"
+  },
+  "dataset": {
+    "id": "phiusiil",
+    "name": "PhiUSIIL Phishing URL Dataset (UCI #967)",
+    "sourceUrl": "https://archive.ics.uci.edu/dataset/967/phiusiil+phishing+url+dataset",
+    "license": "CC BY 4.0",
+    "citation": "A. Prasad and S. Chandra, \"PhiUSIIL: A diverse security profile empowered phishing URL detection framework based on similarity index and incremental learning,\" Computers & Security, vol. 136, 2024, 103545.",
+    "file": "data/raw/phiusiil/PhiUSIIL_Phishing_URL_Dataset.csv",
+    "sha256": "a236549cd369cd80bd478ff8e1779cbf44c58d5c3f79f7a51a1adbed7d06d1c6",
+    "downloadedAt": "2026-11-06",
+    "totalRows": 235795,
+    "unknownLabel": 0,
+    "emptyUrl": 0,
+    "duplicatesRemoved": 425,
+    "conflictingLabelsDropped": 0,
+    "uniqueUsable": 235370,
+    "inSplit": {
+      "phishing": 50297,
+      "legitimate": 67555
+    }
+  },
+  "sampling": {
+    "method": "Stratified: 25000 per class drawn uniformly without replacement (Fisher–Yates, mulberry32 seed 42)",
+    "seed": 42,
+    "perClass": 25000,
+    "split": "test",
+    "splitMethod": "FNV-1a(\"hookline-split-v1\" + url) mod 2 (0 = dev, 1 = test); independent of seed",
+    "dedupe": true,
+    "schemePolicy": "as-is",
+    "sampled": 50000,
+    "unparseable": 0,
+    "evaluated": 50000
+  },
+  "config": {
+    "allowlist": true,
+    "allowlistMeta": {
+      "source": "Tranco",
+      "listId": "K9YYW",
+      "listUrl": "https://tranco-list.eu/list/K9YYW",
+      "downloadedAt": "2026-11-06",
+      "sha256": "b4df866fca498c914e91b8cc01795b3902cfdf9c3089c3fc47e3450653210768",
+      "topN": 10000,
+      "size": 9846,
+      "excludedUserContent": 35,
+      "droppedNoRegistrableDomain": 119,
+      "description": "Tranco K9YYW top 10000 (9846 registrable domains; user-content hosts and shorteners excluded)"
+    },
+    "positiveClass": "phishing",
+    "flaggedMeans": "verdict ∈ {suspicious, high_risk} (score ≥ 20)"
+  },
+  "metrics": {
+    "tp": 5973,
+    "fp": 57,
+    "tn": 24943,
+    "fn": 19027,
+    "n": 50000,
+    "precision": 0.9905472636815921,
+    "recall": 0.23892,
+    "falsePositiveRate": 0.00228,
+    "f1": 0.3849822752175314,
+    "accuracy": 0.61832
+  },
+  "confidenceIntervals95": {
+    "recall": [
+      0.2336744581134515,
+      0.2442457638052932
+    ],
+    "falsePositiveRate": [
+      0.0017603666072850456,
+      0.002952567563840999
+    ]
+  },
+  "thresholdSweep": [
+    {
+      "threshold": 10,
+      "tp": 16289,
+      "fp": 57,
+      "tn": 24943,
+      "fn": 8711,
+      "n": 50000,
+      "precision": 0.9965129083567845,
+      "recall": 0.65156,
+      "falsePositiveRate": 0.00228,
+      "f1": 0.7879359551105306,
+      "accuracy": 0.82464
+    },
+    {
+      "threshold": 20,
+      "tp": 5973,
+      "fp": 57,
+      "tn": 24943,
+      "fn": 19027,
+      "n": 50000,
+      "precision": 0.9905472636815921,
+      "recall": 0.23892,
+      "falsePositiveRate": 0.00228,
+      "f1": 0.3849822752175314,
+      "accuracy": 0.61832
+    },
+    {
+      "threshold": 30,
+      "tp": 3572,
+      "fp": 5,
+      "tn": 24995,
+      "fn": 21428,
+      "n": 50000,
+      "precision": 0.9986021805982667,
+      "recall": 0.14288,
+      "falsePositiveRate": 0.0002,
+      "f1": 0.24999125170591735,
+      "accuracy": 0.57134
+    },
+    {
+      "threshold": 40,
+      "tp": 1292,
+      "fp": 5,
+      "tn": 24995,
+      "fn": 23708,
+      "n": 50000,
+      "precision": 0.9961449498843485,
+      "recall": 0.05168,
+      "falsePositiveRate": 0.0002,
+      "f1": 0.09826215918165569,
+      "accuracy": 0.52574
+    },
+    {
+      "threshold": 50,
+      "tp": 651,
+      "fp": 0,
+      "tn": 25000,
+      "fn": 24349,
+      "n": 50000,
+      "precision": 1,
+      "recall": 0.02604,
+      "falsePositiveRate": 0,
+      "f1": 0.05075825503878991,
+      "accuracy": 0.51302
+    },
+    {
+      "threshold": 60,
+      "tp": 171,
+      "fp": 0,
+      "tn": 25000,
+      "fn": 24829,
+      "n": 50000,
+      "precision": 1,
+      "recall": 0.00684,
+      "falsePositiveRate": 0,
+      "f1": 0.013587064478963887,
+      "accuracy": 0.50342
+    },
+    {
+      "threshold": 70,
+      "tp": 66,
+      "fp": 0,
+      "tn": 25000,
+      "fn": 24934,
+      "n": 50000,
+      "precision": 1,
+      "recall": 0.00264,
+      "falsePositiveRate": 0,
+      "f1": 0.0052660975025931546,
+      "accuracy": 0.50132
+    }
+  ],
+  "predictedCategory": {
+    "credential_phishing": {
+      "phishing": 1187,
+      "legitimate": 8
+    },
+    "job_scam": {
+      "phishing": 0,
+      "legitimate": 0
+    },
+    "shopping_scam": {
+      "phishing": 0,
+      "legitimate": 0
+    },
+    "none": {
+      "phishing": 23813,
+      "legitimate": 24992
+    }
+  },
+  "allowlistedItems": {
+    "phishing": 522,
+    "legitimate": 646
+  },
+  "ruleFires": {
+    "URL_NO_HTTPS": {
+      "phishing": 12800,
+      "legitimate": 0
+    },
+    "URL_SUSPICIOUS_TLD": {
+      "phishing": 2506,
+      "legitimate": 21
+    },
+    "URL_LONG_DOMAIN": {
+      "phishing": 2138,
+      "legitimate": 5
+    },
+    "URL_MANY_HYPHENS": {
+      "phishing": 1243,
+      "legitimate": 24
+    },
+    "URL_PATH_SCRIPT": {
+      "phishing": 939,
+      "legitimate": 0
+    },
+    "URL_PATH_LOGIN": {
+      "phishing": 522,
+      "legitimate": 0
+    },
+    "URL_DEEP_SUBDOMAINS": {
+      "phishing": 510,
+      "legitimate": 0
+    },
+    "URL_BRAND_IN_DOMAIN": {
+      "phishing": 393,
+      "legitimate": 5
+    },
+    "URL_IP_HOST": {
+      "phishing": 185,
+      "legitimate": 0
+    },
+    "URL_PATH_VERIFY": {
+      "phishing": 88,
+      "legitimate": 0
+    },
+    "URL_PATH_BRAND": {
+      "phishing": 75,
+      "legitimate": 0
+    },
+    "URL_TYPOSQUAT_EDIT": {
+      "phishing": 45,
+      "legitimate": 3
+    },
+    "URL_PUNYCODE": {
+      "phishing": 31,
+      "legitimate": 0
+    },
+    "URL_REDIRECTOR": {
+      "phishing": 4,
+      "legitimate": 0
+    },
+    "URL_TYPOSQUAT_LEET": {
+      "phishing": 1,
+      "legitimate": 0
+    },
+    "URL_MIXED_SCRIPT": {
+      "phishing": 1,
+      "legitimate": 0
+    }
+  },
+  "ablation": [
+    {
+      "rule": "URL_BRAND_IN_DOMAIN",
+      "fires": {
+        "phishing": 393,
+        "legitimate": 5
+      },
+      "metrics": {
+        "tp": 5738,
+        "fp": 52,
+        "tn": 24948,
+        "fn": 19262,
+        "n": 50000,
+        "precision": 0.9910189982728843,
+        "recall": 0.22952,
+        "falsePositiveRate": 0.00208,
+        "f1": 0.3727184150698279,
+        "accuracy": 0.61372
+      },
+      "delta": {
+        "recall": -0.009399999999999992,
+        "falsePositiveRate": -0.0002000000000000001,
+        "precision": 0.0004717345912922388,
+        "f1": -0.012263860147703531,
+        "accuracy": -0.0045999999999999375
+      }
+    },
+    {
+      "rule": "URL_TYPOSQUAT_LEET",
+      "fires": {
+        "phishing": 1,
+        "legitimate": 0
+      },
+      "metrics": {
+        "tp": 5972,
+        "fp": 57,
+        "tn": 24943,
+        "fn": 19028,
+        "n": 50000,
+        "precision": 0.9905456958036158,
+        "recall": 0.23888,
+        "falsePositiveRate": 0.00228,
+        "f1": 0.38493022656224823,
+        "accuracy": 0.6183
+      },
+      "delta": {
+        "recall": -0.00003999999999998449,
+        "falsePositiveRate": 0,
+        "precision": -0.000001567877976227372,
+        "f1": -0.000052048655283187806,
+        "accuracy": -0.000020000000000020002
+      }
+    },
+    {
+      "rule": "URL_TYPOSQUAT_EDIT",
+      "fires": {
+        "phishing": 45,
+        "legitimate": 3
+      },
+      "metrics": {
+        "tp": 5940,
+        "fp": 54,
+        "tn": 24946,
+        "fn": 19060,
+        "n": 50000,
+        "precision": 0.990990990990991,
+        "recall": 0.2376,
+        "falsePositiveRate": 0.00216,
+        "f1": 0.3832999935471382,
+        "accuracy": 0.61772
+      },
+      "delta": {
+        "recall": -0.0013199999999999878,
+        "falsePositiveRate": -0.00011999999999999988,
+        "precision": 0.00044372730939890026,
+        "f1": -0.0016822816703932486,
+        "accuracy": -0.0005999999999999339
+      }
+    },
+    {
+      "rule": "URL_PUNYCODE",
+      "fires": {
+        "phishing": 31,
+        "legitimate": 0
+      },
+      "metrics": {
+        "tp": 5961,
+        "fp": 57,
+        "tn": 24943,
+        "fn": 19039,
+        "n": 50000,
+        "precision": 0.9905284147557328,
+        "recall": 0.23844,
+        "falsePositiveRate": 0.00228,
+        "f1": 0.3843574698562125,
+        "accuracy": 0.61808
+      },
+      "delta": {
+        "recall": -0.00047999999999998044,
+        "falsePositiveRate": 0,
+        "precision": -0.000018848925859238364,
+        "f1": -0.0006248053613189253,
+        "accuracy": -0.00024000000000001798
+      }
+    },
+    {
+      "rule": "URL_MIXED_SCRIPT",
+      "fires": {
+        "phishing": 1,
+        "legitimate": 0
+      },
+      "metrics": {
+        "tp": 5973,
+        "fp": 57,
+        "tn": 24943,
+        "fn": 19027,
+        "n": 50000,
+        "precision": 0.9905472636815921,
+        "recall": 0.23892,
+        "falsePositiveRate": 0.00228,
+        "f1": 0.3849822752175314,
+        "accuracy": 0.61832
+      },
+      "delta": {
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "precision": 0,
+        "f1": 0,
+        "accuracy": 0
+      }
+    },
+    {
+      "rule": "URL_SUSPICIOUS_TLD",
+      "fires": {
+        "phishing": 2506,
+        "legitimate": 21
+      },
+      "metrics": {
+        "tp": 4191,
+        "fp": 36,
+        "tn": 24964,
+        "fn": 20809,
+        "n": 50000,
+        "precision": 0.9914833215046132,
+        "recall": 0.16764,
+        "falsePositiveRate": 0.00144,
+        "f1": 0.2867896123447497,
+        "accuracy": 0.5831
+      },
+      "delta": {
+        "recall": -0.07127999999999998,
+        "falsePositiveRate": -0.0008399999999999998,
+        "precision": 0.0009360578230210859,
+        "f1": -0.09819266287278172,
+        "accuracy": -0.03522000000000003
+      }
+    },
+    {
+      "rule": "URL_PATH_VERIFY",
+      "fires": {
+        "phishing": 88,
+        "legitimate": 0
+      },
+      "metrics": {
+        "tp": 5907,
+        "fp": 57,
+        "tn": 24943,
+        "fn": 19093,
+        "n": 50000,
+        "precision": 0.9904426559356136,
+        "recall": 0.23628,
+        "falsePositiveRate": 0.00228,
+        "f1": 0.3815398527322051,
+        "accuracy": 0.617
+      },
+      "delta": {
+        "recall": -0.0026400000000000035,
+        "falsePositiveRate": 0,
+        "precision": -0.00010460774597842448,
+        "f1": -0.003442422485326335,
+        "accuracy": -0.0013199999999999878
+      }
+    },
+    {
+      "rule": "URL_PATH_LOGIN",
+      "fires": {
+        "phishing": 522,
+        "legitimate": 0
+      },
+      "metrics": {
+        "tp": 5663,
+        "fp": 57,
+        "tn": 24943,
+        "fn": 19337,
+        "n": 50000,
+        "precision": 0.990034965034965,
+        "recall": 0.22652,
+        "falsePositiveRate": 0.00228,
+        "f1": 0.36868489583333336,
+        "accuracy": 0.61212
+      },
+      "delta": {
+        "recall": -0.012399999999999994,
+        "falsePositiveRate": 0,
+        "precision": -0.0005122986466270518,
+        "f1": -0.016297379384198063,
+        "accuracy": -0.006199999999999983
+      }
+    },
+    {
+      "rule": "URL_PATH_BRAND",
+      "fires": {
+        "phishing": 75,
+        "legitimate": 0
+      },
+      "metrics": {
+        "tp": 5904,
+        "fp": 57,
+        "tn": 24943,
+        "fn": 19096,
+        "n": 50000,
+        "precision": 0.9904378459989934,
+        "recall": 0.23616,
+        "falsePositiveRate": 0.00228,
+        "f1": 0.3813830302638804,
+        "accuracy": 0.61694
+      },
+      "delta": {
+        "recall": -0.0027599999999999847,
+        "falsePositiveRate": 0,
+        "precision": -0.00010941768259864482,
+        "f1": -0.0035992449536510485,
+        "accuracy": -0.0013799999999999368
+      }
+    },
+    {
+      "rule": "URL_PATH_SCRIPT",
+      "fires": {
+        "phishing": 939,
+        "legitimate": 0
+      },
+      "metrics": {
+        "tp": 5808,
+        "fp": 57,
+        "tn": 24943,
+        "fn": 19192,
+        "n": 50000,
+        "precision": 0.9902813299232737,
+        "recall": 0.23232,
+        "falsePositiveRate": 0.00228,
+        "f1": 0.3763486149360116,
+        "accuracy": 0.61502
+      },
+      "delta": {
+        "recall": -0.006599999999999995,
+        "falsePositiveRate": 0,
+        "precision": -0.00026593375831840405,
+        "f1": -0.008633660281519795,
+        "accuracy": -0.0032999999999999696
+      }
+    },
+    {
+      "rule": "URL_LONG_DOMAIN",
+      "fires": {
+        "phishing": 2138,
+        "legitimate": 5
+      },
+      "metrics": {
+        "tp": 5194,
+        "fp": 53,
+        "tn": 24947,
+        "fn": 19806,
+        "n": 50000,
+        "precision": 0.98989898989899,
+        "recall": 0.20776,
+        "falsePositiveRate": 0.00212,
+        "f1": 0.3434390187456607,
+        "accuracy": 0.60282
+      },
+      "delta": {
+        "recall": -0.031159999999999993,
+        "falsePositiveRate": -0.00015999999999999999,
+        "precision": -0.0006482737826021268,
+        "f1": -0.04154325647187074,
+        "accuracy": -0.015499999999999958
+      }
+    },
+    {
+      "rule": "URL_MANY_HYPHENS",
+      "fires": {
+        "phishing": 1243,
+        "legitimate": 24
+      },
+      "metrics": {
+        "tp": 5491,
+        "fp": 34,
+        "tn": 24966,
+        "fn": 19509,
+        "n": 50000,
+        "precision": 0.9938461538461538,
+        "recall": 0.21964,
+        "falsePositiveRate": 0.00136,
+        "f1": 0.3597706797706797,
+        "accuracy": 0.60914
+      },
+      "delta": {
+        "recall": -0.01927999999999999,
+        "falsePositiveRate": -0.0009199999999999998,
+        "precision": 0.003298890164561752,
+        "f1": -0.025211595446851698,
+        "accuracy": -0.009179999999999966
+      }
+    },
+    {
+      "rule": "URL_IP_HOST",
+      "fires": {
+        "phishing": 185,
+        "legitimate": 0
+      },
+      "metrics": {
+        "tp": 5886,
+        "fp": 57,
+        "tn": 24943,
+        "fn": 19114,
+        "n": 50000,
+        "precision": 0.9904088844018173,
+        "recall": 0.23544,
+        "falsePositiveRate": 0.00228,
+        "f1": 0.38044145687231357,
+        "accuracy": 0.61658
+      },
+      "delta": {
+        "recall": -0.003479999999999983,
+        "falsePositiveRate": 0,
+        "precision": -0.0001383792797747807,
+        "f1": -0.004540818345217856,
+        "accuracy": -0.0017399999999999638
+      }
+    },
+    {
+      "rule": "URL_DEEP_SUBDOMAINS",
+      "fires": {
+        "phishing": 510,
+        "legitimate": 0
+      },
+      "metrics": {
+        "tp": 5821,
+        "fp": 57,
+        "tn": 24943,
+        "fn": 19179,
+        "n": 50000,
+        "precision": 0.9903028240898265,
+        "recall": 0.23284,
+        "falsePositiveRate": 0.00228,
+        "f1": 0.3770321912040935,
+        "accuracy": 0.61528
+      },
+      "delta": {
+        "recall": -0.006080000000000002,
+        "falsePositiveRate": 0,
+        "precision": -0.0002444395917655662,
+        "f1": -0.007950084013437941,
+        "accuracy": -0.0030399999999999316
+      }
+    },
+    {
+      "rule": "URL_NO_HTTPS",
+      "fires": {
+        "phishing": 12800,
+        "legitimate": 0
+      },
+      "metrics": {
+        "tp": 5797,
+        "fp": 57,
+        "tn": 24943,
+        "fn": 19203,
+        "n": 50000,
+        "precision": 0.9902630679877007,
+        "recall": 0.23188,
+        "falsePositiveRate": 0.00228,
+        "f1": 0.3757697543268296,
+        "accuracy": 0.6148
+      },
+      "delta": {
+        "recall": -0.007039999999999991,
+        "falsePositiveRate": 0,
+        "precision": -0.0002841956938913759,
+        "f1": -0.009212520890701847,
+        "accuracy": -0.0035199999999999676
+      }
+    },
+    {
+      "rule": "URL_REDIRECTOR",
+      "fires": {
+        "phishing": 4,
+        "legitimate": 0
+      },
+      "metrics": {
+        "tp": 5973,
+        "fp": 57,
+        "tn": 24943,
+        "fn": 19027,
+        "n": 50000,
+        "precision": 0.9905472636815921,
+        "recall": 0.23892,
+        "falsePositiveRate": 0.00228,
+        "f1": 0.3849822752175314,
+        "accuracy": 0.61832
+      },
+      "delta": {
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "precision": 0,
+        "f1": 0,
+        "accuracy": 0
+      }
+    }
+  ],
+  "allowlistAblation": {
+    "metrics": {
+      "tp": 6193,
+      "fp": 58,
+      "tn": 24942,
+      "fn": 18807,
+      "n": 50000,
+      "precision": 0.99072148456247,
+      "recall": 0.24772,
+      "falsePositiveRate": 0.00232,
+      "f1": 0.39633931714185144,
+      "accuracy": 0.6227
+    },
+    "delta": {
+      "recall": 0.008800000000000002,
+      "falsePositiveRate": 0.000040000000000000105,
+      "precision": 0.00017422088087792886,
+      "f1": 0.011357041924320022,
+      "accuracy": 0.0043800000000000505
+    }
+  },
+  "examples": {
+    "falsePositives": [
+      "https://www.probloggertips.xyz  [URL_SUSPICIOUS_TLD]",
+      "https://www.nuevaguia.xyz  [URL_SUSPICIOUS_TLD]",
+      "https://www.saint-amand-les-eaux.fr  [URL_MANY_HYPHENS]",
+      "https://www.enjoy-the-life-baby.com  [URL_MANY_HYPHENS]",
+      "https://www.miles-and-more-kreditkarte.com  [URL_MANY_HYPHENS]",
+      "https://www.chase.worcs.sch.uk  [URL_BRAND_IN_DOMAIN]",
+      "https://www.ihr-immobilienmakler-in-heidelberg.de  [URL_LONG_DOMAIN, URL_MANY_HYPHENS]",
+      "https://www.izadi.xyz  [URL_SUSPICIOUS_TLD]",
+      "https://www.clowns-sans-frontieres-france.org  [URL_MANY_HYPHENS]",
+      "https://www.amazonias.net  [URL_TYPOSQUAT_EDIT]",
+      "https://www.kittenbot.cc  [URL_SUSPICIOUS_TLD]",
+      "https://www.g-o-o-d.eu  [URL_MANY_HYPHENS]",
+      "https://www.where-are-they-now.co.uk  [URL_MANY_HYPHENS]",
+      "https://www.googlefight.com  [URL_BRAND_IN_DOMAIN]",
+      "https://www.european-flying-car-association.org  [URL_MANY_HYPHENS]"
+    ],
+    "falseNegatives": [
+      "https://daycoval.facildepagar.com.br/#/inicio",
+      "https://obabanter36.web.app/",
+      "http://emelicker-wixsite-com.usrfiles.com/html/0e472f_4d9b2a88f72eb4191a8eb158b004ca1f.html",
+      "http://www.cosmetic1.4code.se",
+      "http://www.f0594823.xsph.ru",
+      "http://www.mining-help.ru",
+      "http://www.piratenbucht.eu",
+      "http://www.hostingerapp.com",
+      "http://www.spbutoto.com",
+      "https://maildinshaakckjnw529.web.app/",
+      "http://ixiework.com/secure3a/ch/",
+      "http://www.sycg.oss-eu-west-1.aliyuncs.com",
+      "http://bit.do/sicurezza3dscarte",
+      "https://www.systemathailand.com",
+      "http://anilreddydev.github.io/facebookloginpageclone"
+    ]
+  },
+  "durationMs": 28930
+}

@@ -1,0 +1,133 @@
+{
+  "_notice": "SYNTHETIC — every message below was written by hand for Hookline unit tests. None is a real email, none came from a dataset, and they must never be used to report detection performance.",
+  "cases": [
+    {
+      "id": "job-fee-01",
+      "synthetic": true,
+      "rule": "JOB_UPFRONT_FEE",
+      "senderName": "Global Staffing HR",
+      "senderEmail": "hr@global-staffing-example.com",
+      "subject": "Your Remote Assistant Position",
+      "body": "Thank you for applying for the remote assistant job. Before onboarding, you will need to pay a refundable $150 training fee for the starter kit."
+    },
+    {
+      "id": "job-check-01",
+      "synthetic": true,
+      "rule": "JOB_CHECK_SCHEME",
+      "senderName": "Recruiting Team",
+      "senderEmail": "recruiting@acme-careers-example.com",
+      "subject": "Next steps for your position",
+      "body": "Congratulations on your new remote job. We will send you a check for $2,500. Deposit the check and purchase your laptop from our approved vendor."
+    },
+    {
+      "id": "job-freemail-01",
+      "synthetic": true,
+      "rule": "JOB_FREE_EMAIL_RECRUITER",
+      "senderName": "Contoso Talent Acquisition",
+      "senderEmail": "contoso.talent.team@gmail.com",
+      "subject": "Interview for Data Analyst position",
+      "body": "I am the hiring manager at Contoso and we reviewed your resume for the data analyst position. Please confirm your availability for an interview."
+    },
+    {
+      "id": "job-chat-01",
+      "synthetic": true,
+      "rule": "JOB_MOVE_TO_CHAT",
+      "senderName": "Recruiter",
+      "senderEmail": "jobs@fabrikam-example.com",
+      "subject": "Part-time job opportunity",
+      "body": "We saw your resume and have a part-time position for you. Please contact our hiring manager on Telegram to continue the process."
+    },
+    {
+      "id": "job-chatinterview-01",
+      "synthetic": true,
+      "rule": "JOB_CHAT_INTERVIEW",
+      "senderName": "Recruiter",
+      "senderEmail": "jobs@fabrikam-example.com",
+      "subject": "Interview scheduled",
+      "body": "Your interview for the customer service job will be conducted via text chat on Signal app tomorrow at 10am. No phone call is needed."
+    },
+    {
+      "id": "job-nointerview-01",
+      "synthetic": true,
+      "rule": "JOB_OFFER_NO_INTERVIEW",
+      "senderName": "HR Department",
+      "senderEmail": "hr@northwind-example.com",
+      "subject": "Job offer",
+      "body": "Good news! You have been selected for the position of Remote Administrative Assistant. No interview required, you can start on Monday."
+    },
+    {
+      "id": "job-pay-01",
+      "synthetic": true,
+      "rule": "JOB_UNREALISTIC_PAY",
+      "senderName": "Jobs",
+      "senderEmail": "jobs@wingtip-example.com",
+      "subject": "Work from home position",
+      "body": "Hiring now for a part-time job: earn $45/hr, no experience needed, only 2 hours a day from your phone."
+    },
+    {
+      "id": "job-ssn-01",
+      "synthetic": true,
+      "rule": "JOB_SENSITIVE_INFO",
+      "senderName": "Onboarding",
+      "senderEmail": "onboarding@tailspin-example.com",
+      "subject": "Your new position",
+      "body": "To finish hiring you for the position, please send us your social security number and a photo of your ID by reply."
+    },
+    {
+      "id": "job-task-01",
+      "synthetic": true,
+      "rule": "JOB_TASK_DEPOSIT",
+      "senderName": "Opportunity",
+      "senderEmail": "work@adatum-example.com",
+      "subject": "Flexible online job",
+      "body": "This remote job is simple. Complete 40 tasks per day rating products. To unlock your commission you must recharge your account with 100 USDT first."
+    },
+    {
+      "id": "job-urgency-01",
+      "synthetic": true,
+      "rule": "JOB_URGENCY",
+      "senderName": "Recruiter",
+      "senderEmail": "jobs@fourthcoffee-example.com",
+      "subject": "Internship offer",
+      "body": "We are offering you the summer internship position. Reply within 24 hours to secure your position, as spots are filling fast."
+    }
+  ],
+  "negatives": [
+    {
+      "id": "legit-interview-01",
+      "synthetic": true,
+      "note": "Normal recruiter email from a company domain — must be safe.",
+      "senderName": "Acme Talent Team",
+      "senderEmail": "talent@acme.com",
+      "subject": "Interview invitation — Software Engineer",
+      "body": "Thanks for applying to the Software Engineer position. We'd like to schedule a 45-minute video interview with the hiring team next week. Please pick a time that works for you."
+    },
+    {
+      "id": "legit-benefits-01",
+      "synthetic": true,
+      "note": "Benefits text with reimbursement, deposit and fees mentioned in benign ways — must be safe.",
+      "senderName": "Northwind HR",
+      "senderEmail": "people@northwind.com",
+      "subject": "Your offer letter and benefits",
+      "body": "Attached is your offer letter for the analyst position following your interviews. Benefits include a reimbursement policy for home office equipment and direct deposit of your salary. There are no training fees. The company will pay the application fee for your certification."
+    },
+    {
+      "id": "legit-nonjob-01",
+      "synthetic": true,
+      "note": "Not a job email; mentions a fee and WhatsApp — job rules must not run.",
+      "senderName": "Book Club",
+      "senderEmail": "club@gmail.com",
+      "subject": "Book club this Friday",
+      "body": "Hi all, the room booking fee is $5 each. Message me on WhatsApp if you can't make it."
+    },
+    {
+      "id": "legit-conditional-01",
+      "synthetic": true,
+      "note": "'In case you are selected' is conditional, not an offer.",
+      "senderName": "Recruiting",
+      "senderEmail": "recruiting@contoso.com",
+      "subject": "Application received",
+      "body": "We received your application for the web developer position. In case you are selected for the position, you will be invited to two interview rounds."
+    }
+  ]
+}

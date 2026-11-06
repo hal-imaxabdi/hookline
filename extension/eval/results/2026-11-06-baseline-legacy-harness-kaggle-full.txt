@@ -1,0 +1,40 @@
+
+> hookline-extension@1.0.0 eval
+> tsx eval/evaluate.ts eval/data/raw/phishing-site-urls/phishing_site_urls.csv
+
+
+Dataset: eval/data/raw/phishing-site-urls/phishing_site_urls.csv
+URL column: 0  |  Label column: 1
+
+──────────────────────────────────────────────
+Processed:        548402
+Skipped rows:     12   (unknown label / malformed)
+Unparseable URLs: 939
+──────────────────────────────────────────────
+Confusion matrix (positive = phishing):
+  True positives  (caught phishing): 64439
+  False negatives (missed phishing): 91120
+  True negatives  (cleared safe):    348341
+  False positives (flagged safe):    44502
+──────────────────────────────────────────────
+Detection rate (recall):   41.4%   ← caught 64439 of 155559 phishing URLs
+False-positive rate:       11.3%   ← flagged 44502 of 392843 safe URLs
+Precision:                 59.2%
+Accuracy:                  75.3%
+F1 score:                  0.487
+──────────────────────────────────────────────
+
+Example MISSED phishing (false negatives):
+  - mail.printakid.com/www.online.americanexpress.com/index.html
+  - thewhiskeydregs.com/wp-content/themes/widescreen/includes/temp/promocoessmiles/?8478478782
+  - super1000.info/docs
+  - docs.google.com/spreadsheet/viewform?formkey=dE5rVEdSV2pBdkpSRy11V3o2eDdwbnc6MQ
+  - www.coincoele.com.br/Scripts/smiles/?pt-br/Paginas/default.aspx
+
+Example FALSE ALARMS on safe URLs (false positives):
+  - ¾5092
+  - ïC¿YÂO®
+  - www.ficpa.org/content/home.aspx
+  - www.continuingeducation.net/schedule.php?profession=Accountants
+  - www.calcpa.org/Content/foundation.aspx
+

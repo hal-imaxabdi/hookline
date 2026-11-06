@@ -1,69 +1,93 @@
 /**
- * Hookline Risk Engine — Phase 9
+ * Hookline Risk Engine
  *
- * Turns a list of evidence items into a single 0–100 risk score and a verdict.
+ * Turns evidence items into a 0–100 risk score, a verdict, and a scam-category
+ * label. Weights live in ruleRegistry.ts.
  *
- * Replaces the old "count the red flags" logic. Each evidence TYPE has a base
- * weight (its worth at "high" severity); severity scales that down. We take the
- * strongest item of each type (so three url_structure flags don't triple-count)
- * and sum across types.
+ *   points(item) = RULES[item.ruleId].weight × SEVERITY_FACTOR[item.severity]
+ *   score        = min(100, round(Σ_group max(points in group)))
  *
- * Design goals:
- *   - One strong signal (typosquat, homoglyph) is enough to flag.
- *   - Weak signals (a single odd TLD, a missing DMARC record) do NOT flip a
- *     safe site to "suspicious" on their own — they only matter in combination.
- *   - Adding evidence can only raise the score, never lower it.
+ * Taking the max per group means overlapping signals of the same kind (three
+ * url_structure flags) don't triple-count, while independent signals add up.
  */
 
-import { EvidenceItem, EvidenceType, EvidenceSeverity, RiskLevel, Confidence } from "./types";
+import type {
+  EvidenceItem,
+  EvidenceType,
+  EvidenceSeverity,
+  RiskLevel,
+  Confidence,
+  CategoryResult,
+  ScamCategory,
+} from "./types";
+import { RULES, type RuleId } from "./ruleRegistry";
 
-// Base points for each evidence type, assuming "high" severity.
-const TYPE_WEIGHTS: Record<EvidenceType, number> = {
-  homoglyph: 55,
-  typosquatting: 50,
-  brand_impersonation: 45,
-  sender_mismatch: 45,
-  domain_age: 42,
-  url_structure: 35,
-  spf_fail: 30,
-  credential_harvesting: 28,
-  no_dmarc: 26,
-  dkim_missing: 24,
-  ssl_missing: 24,
-  suspicious_tld: 22,
-  low_reputation: 18,
-  suspicious_link: 30,
-};
-
-const SEVERITY_FACTOR: Record<EvidenceSeverity, number> = {
+export const SEVERITY_FACTOR: Record<EvidenceSeverity, number> = {
   high: 1,
   medium: 0.5,
   low: 0.25,
 };
 
-// Thresholds on the 0–100 score.
-const HIGH_RISK_AT = 50;
-const SUSPICIOUS_AT = 20;
+export const HIGH_RISK_AT = 50;
+export const SUSPICIOUS_AT = 20;
+/** A category needs at least this many points to be named. */
+export const CATEGORY_MIN_POINTS = 20;
 
-export function scoreEvidence(evidence: EvidenceItem[]): {
+export interface ScoreOptions {
+  /** Rule IDs to ignore (ablation, user settings). */
+  disabledRules?: ReadonlySet<RuleId>;
+  /** If true, allow-list-suppressible rules are ignored. */
+  allowlisted?: boolean;
+}
+
+export interface ScoreResult {
   riskScore: number;
   verdict: RiskLevel;
   confidence: Confidence;
-} {
-  // Strongest contribution per type.
-  const perType: Partial<Record<EvidenceType, number>> = {};
+  active: EvidenceItem[];
+  suppressed: EvidenceItem[];
+  category: CategoryResult;
+}
+
+export function pointsFor(item: EvidenceItem): number {
+  const rule = RULES[item.ruleId];
+  return rule.weight * SEVERITY_FACTOR[item.severity];
+}
+
+/** Split evidence into what counts and what is ignored, given the options. */
+export function partitionEvidence(
+  evidence: readonly EvidenceItem[],
+  opts: ScoreOptions = {}
+): { active: EvidenceItem[]; suppressed: EvidenceItem[] } {
+  const active: EvidenceItem[] = [];
+  const suppressed: EvidenceItem[] = [];
   for (const e of evidence) {
-    const base = TYPE_WEIGHTS[e.type] ?? 10;
-    const points = base * (SEVERITY_FACTOR[e.severity] ?? 0.25);
-    perType[e.type] = Math.max(perType[e.type] ?? 0, points);
+    if (opts.disabledRules?.has(e.ruleId)) continue;
+    if (opts.allowlisted && RULES[e.ruleId].allowlistSuppressible) {
+      suppressed.push(e);
+      continue;
+    }
+    active.push(e);
+  }
+  return { active, suppressed };
+}
+
+export function scoreEvidence(
+  evidence: readonly EvidenceItem[],
+  opts: ScoreOptions = {}
+): ScoreResult {
+  const { active, suppressed } = partitionEvidence(evidence, opts);
+
+  const perGroup = new Map<EvidenceType, number>();
+  for (const e of active) {
+    const p = pointsFor(e);
+    perGroup.set(e.type, Math.max(perGroup.get(e.type) ?? 0, p));
   }
 
   let raw = 0;
-  for (const key of Object.keys(perType)) {
-    raw += perType[key as EvidenceType] ?? 0;
-  }
+  for (const v of perGroup.values()) raw += v;
   const riskScore = Math.min(100, Math.round(raw));
-  const distinctTypes = Object.keys(perType).length;
+  const distinctGroups = perGroup.size;
 
   let verdict: RiskLevel;
   if (riskScore >= HIGH_RISK_AT) verdict = "high_risk";
@@ -71,15 +95,72 @@ export function scoreEvidence(evidence: EvidenceItem[]): {
   else verdict = "safe";
 
   let confidence: Confidence;
-  if (verdict === "safe") {
-    confidence = "high";
-  } else if (riskScore >= 70 || distinctTypes >= 3) {
-    confidence = "high";
-  } else if (riskScore >= 35 || distinctTypes >= 2) {
-    confidence = "medium";
-  } else {
-    confidence = "low";
+  if (verdict === "safe") confidence = "high";
+  else if (riskScore >= 70 || distinctGroups >= 3) confidence = "high";
+  else if (riskScore >= 35 || distinctGroups >= 2) confidence = "medium";
+  else confidence = "low";
+
+  return { riskScore, verdict, confidence, active, suppressed, category: categorize(active, verdict) };
+}
+
+/**
+ * Scam-category classifier.
+ *
+ * Sums points per category (max per group, like the score) over the active
+ * evidence. The highest category wins if it reaches CATEGORY_MIN_POINTS and
+ * the overall verdict isn't "safe". "general" rules (TLD, http, structure)
+ * raise the risk score but never name a category on their own.
+ */
+export function categorize(active: readonly EvidenceItem[], verdict: RiskLevel): CategoryResult {
+  const groupMax = new Map<string, { cat: ScamCategory; points: number; title: string }>();
+  for (const e of active) {
+    const rule = RULES[e.ruleId];
+    if (rule.category === "general") continue;
+    const p = pointsFor(e);
+    const key = `${rule.category}:${e.type}`;
+    const prev = groupMax.get(key);
+    if (!prev || p > prev.points) groupMax.set(key, { cat: rule.category, points: p, title: e.title });
   }
 
-  return { riskScore, verdict, confidence };
+  const points: Record<ScamCategory, number> = { credential_phishing: 0, job_scam: 0, shopping_scam: 0 };
+  const reasons: Record<ScamCategory, Array<{ title: string; points: number }>> = {
+    credential_phishing: [], job_scam: [], shopping_scam: [],
+  };
+  for (const { cat, points: p, title } of groupMax.values()) {
+    points[cat] += p;
+    reasons[cat].push({ title, points: p });
+  }
+
+  let best: ScamCategory | null = null;
+  for (const cat of Object.keys(points) as ScamCategory[]) {
+    if (best === null || points[cat] > points[best]) best = cat;
+  }
+
+  if (verdict === "safe" || best === null || points[best] < CATEGORY_MIN_POINTS) {
+    return { label: "none", points, reasons: [] };
+  }
+  return {
+    label: best,
+    points,
+    reasons: reasons[best].sort((a, b) => b.points - a.points).map((x) => x.title),
+  };
+}
+
+/** Helper for analyzers: build an evidence item with the rule's defaults. */
+export function makeEvidence(
+  ruleId: RuleId,
+  title: string,
+  description: string,
+  detail?: string,
+  severity?: EvidenceSeverity
+): EvidenceItem {
+  const rule = RULES[ruleId];
+  return {
+    ruleId,
+    type: rule.group,
+    severity: severity ?? rule.defaultSeverity,
+    title,
+    description,
+    ...(detail !== undefined ? { detail } : {}),
+  };
 }
