@@ -22,9 +22,9 @@
 
 ---
 
-## 2. Bugs: detection logic (these affect the paper's numbers)
+## 2. Bugs: detection logic (these affect the reported numbers)
 
-### 2.1 Eval harness is not reproducible as written — **critical for the paper**
+### 2.1 Eval harness is not reproducible as written — **critical for reported results**
 `extension/eval/evaluate.ts`
 - **README says "balanced 50k sample (25k / 25k)", but the script has no sampling or balancing code.** `--limit=N` just takes the first N rows. The published 40.5% / 12.7% cannot be regenerated from the repo, and the dataset name, URL, and download date are not recorded anywhere.
 - **Scheme-less URLs get `http://` prepended** (`normaliseUrl`, line 77). That fires `ssl_missing` (12 points) on *every* scheme-less row, because the dataset never contained a scheme, not because the site lacks HTTPS. Verified: `example.com/index.php` scores 30 → **suspicious** through the harness, while `https://example.com/index.php` scores 18 → safe. Common Kaggle sets (e.g. `phishing_site_urls.csv`) are mostly scheme-less, so **the reported 12.7% FPR is probably inflated by the harness itself.** I can't measure by how much without the dataset.
@@ -122,11 +122,11 @@ Mentioning a brand is not impersonation. A newsletter that says "Apple announced
 | # | Issue | Severity | Notes |
 |---|---|---|---|
 | S1 | Backend CORS `*` + no host validation → any webpage can make your backend connect to internal hosts | **High** (local only, but real) | Fix: restrict CORS to `chrome-extension://<id>`, reject IPs, localhost, private ranges, and invalid hostnames. |
-| S2 | **SSL check opens a direct TCP connection to the sender's or link's domain.** For a phishing domain, this tells the attacker's server your IP and that you looked. | Medium (privacy) | The paper's privacy section should say this. Option: make the SSL probe separately toggleable, or use CT logs (crt.sh) instead. |
+| S2 | **SSL check opens a direct TCP connection to the sender's or link's domain.** For a phishing domain, this tells the attacker's server your IP and that you looked. | Medium (privacy) | The privacy docs should say this. Option: make the SSL probe separately toggleable, or use CT logs (crt.sh) instead. |
 | S3 | Domains are sent to **rdap.org** (third party) and to your DNS resolver | Info | Acceptable under your rules (domains only), but it's not documented, and there's no off switch other than not running the backend. |
 | S4 | Sidebar loads **Google Fonts** from fonts.googleapis.com every time it opens | Low (privacy) | It's a third-party request on every open. Fix: bundle the fonts locally. |
 | S5 | Overly broad permissions: `host_permissions` `https://*/*` + `http://*/*`; `scripting` and `tabs` declared but `scripting` is **never used**; `web_accessible_resources` exposes `*.css` to `<all_urls>` (fingerprintable, not needed) | Medium | Fix: `http://localhost:8000/*` (or `127.0.0.1`) is all the backend fetch needs. Detailed plan in §7. |
-| S6 | Email body text never leaves the machine ✅ | — | Verified by code: only `senderDomain` / `domain` is sent to the backend. Good, and worth stating in the paper. |
+| S6 | Email body text never leaves the machine ✅ | — | Verified by code: only `senderDomain` / `domain` is sent to the backend. Good, and worth documenting. |
 | S7 | Auto-clicking Gmail's "show details" changes the user's UI | Low | Use a read-only approach instead. |
 
 ---
@@ -165,7 +165,7 @@ Rule changes move the metrics, so **step 0 is to freeze a baseline**: run the *u
 
 ### P0: make the numbers trustworthy (before any rule changes)
 1. **Get the dataset** (see Questions) and record its name, source URL, download date, row count, and SHA-256.
-2. **Fix the eval harness:** seeded stratified sampling (`--seed`, `--per-class`), dedupe, a configurable scheme policy (`--scheme=none|http|https`, default: don't add a scheme and skip the protocol check when it's absent), strict label mapping (phishing only, with others reported as excluded), and JSON + markdown output. Report baseline numbers **both before and after** the harness fix, so the paper can say how much of the 12.7% came from the artifact.
+2. **Fix the eval harness:** seeded stratified sampling (`--seed`, `--per-class`), dedupe, a configurable scheme policy (`--scheme=none|http|https`, default: don't add a scheme and skip the protocol check when it's absent), strict label mapping (phishing only, with others reported as excluded), and JSON + markdown output. Report baseline numbers **both before and after** the harness fix, so the write-up can say how much of the 12.7% came from the artifact.
 
 ### P1: correctness and reliability (Phase 2)
 3. **Brand matching:** match tokens of the registrable label (split on `-`/`.`/digits) plus a "brand appears as a whole label" rule, instead of substrings. Drop risky keywords (`ups`, `dhi`, `appi`, `prime`, `chase` as a substring). Add missing official domains (amazon.com.au/.ca/.fr…, googleblog, youtube…). For email, flag brand impersonation only when the brand appears in the **display name, sender address, or subject** and the sending domain isn't official, not merely when the body mentions it.
@@ -187,8 +187,8 @@ Rule changes move the metrics, so **step 0 is to freeze a baseline**: run the *u
 
 ## 8. Questions I need answered before Phase 2
 
-1. **Dataset:** which exact CSV produced the 40.5% / 12.7%? Please put it somewhere I can read it (e.g. `extension/eval/data/`, gitignored) and give me the Kaggle URL. If the 25k/25k sample was made by hand or with another script, I need that too, or we accept that the old numbers can't be reproduced and say so in the paper.
-2. **Scam-message dataset (text, label, category):** do you have a real labelled dataset of job/shopping scam messages? Synthetic fixtures are fine for unit tests, but **metrics computed on text I wrote myself would be circular** and shouldn't appear in the paper as detection performance. If you don't have one, I'll build the CSV loader and report results only when you supply real data.
+1. **Dataset:** which exact CSV produced the 40.5% / 12.7%? Please put it somewhere I can read it (e.g. `extension/eval/data/`, gitignored) and give me the Kaggle URL. If the 25k/25k sample was made by hand or with another script, I need that too, or we accept that the old numbers can't be reproduced and say so in the docs.
+2. **Scam-message dataset (text, label, category):** do you have a real labelled dataset of job/shopping scam messages? Synthetic fixtures are fine for unit tests, but **metrics computed on text I wrote myself would be circular** and shouldn't be reported as detection performance. If you don't have one, I'll build the CSV loader and report results only when you supply real data.
 3. **Shopping-scam detection on web pages** needs to read page text on arbitrary sites. My recommendation is **on demand only**: when you click the toolbar icon or "Analyze this page", inject a script via the existing `activeTab` + `scripting` permissions. That adds no new host permission and doesn't run on every site. The alternative, an always-on content script on `<all_urls>`, is much more invasive. OK to go with on-demand?
 4. **Tranco list:** OK for me to download a Tranco list (tranco-list.eu) and commit, say, the top 10k registrable domains (~150 KB) with its list ID and date?
 5. **Threat-intel availability (to verify before building):** PhishTank has not accepted new API registrations for a long time, and abuse.ch (URLhaus) now requires a free Auth-Key. Google has also introduced Safe Browsing v5. Should I target URLhaus (you'd register a free key) plus Safe Browsing v4 Lookup as you specified, and confirm the current API status before coding?
