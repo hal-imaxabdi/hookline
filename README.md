@@ -46,8 +46,25 @@ Without it, the extension still works using its built-in checks.
 
 ## Results
 
-Tested on public phishing and job-posting datasets: 24–26% of phishing URLs detected, with under 0.5% false alarms. Details and how to reproduce them are in [`extension/eval/RESULTS.md`](extension/eval/RESULTS.md).
+Tested once on held-out halves of public datasets (25,000 URLs per class):
+
+- Phishing URLs: 24–26% detected, 0.2–0.5% false alarms, 98–99% precision.
+- Fake job ads (EMSCAD): 6.2% detected, 0.1% false alarms. Most job-scam
+  rules target what happens in conversation, not in the ad.
+- Shopping scams: no labelled dataset exists, so only unit-tested.
+
+An earlier version reported 40.5% recall. That figure came from an
+evaluation bug (a "no HTTPS" rule fired on every row). Measured correctly
+it was 11.7%. Details in `extension/eval/RESULTS.md`.
 
 ## Limitations
 
-Hookline uses rules, not machine learning, so it will miss some scams. This is especially true for brand-new domains with nothing suspicious in their name. Gmail's page layout can change without notice, and the language checks are English-only.
+- Hookline misses most phishing URLs (about 75%). A "safe" verdict means
+  no warning signs were found, not that a link is safe.
+- Precision was measured on balanced samples and will be lower in real
+  browsing, where phishing is rare.
+- Rules see only the URL and text, so new domains with ordinary names
+  pass unnoticed.
+- Gmail extraction was tested on synthetic page markup. Gmail's layout
+  can change without notice.
+- Datasets are from 2012–2024. Language checks are English-only.
