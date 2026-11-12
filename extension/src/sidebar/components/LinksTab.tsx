@@ -21,7 +21,7 @@ export default function LinksTab({ state }: { state: TabState | null }) {
         <StatCell label="Total" value={links.length} color="var(--text-primary)" />
         <StatCell label="High risk" value={count("high_risk")} color="var(--risk-high)" />
         <StatCell label="Suspicious" value={count("suspicious")} color="var(--risk-medium)" />
-        <StatCell label="Safe" value={count("safe")} color="var(--risk-low)" />
+        <StatCell label="No signs" value={count("safe")} color="var(--risk-low)" />
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {links.map((link, i) => <LinkCard key={`${link.href}-${i}`} link={link} />)}
@@ -42,7 +42,7 @@ function StatCell({ label, value, color }: { label: string; value: number; color
 function LinkCard({ link }: { link: AnalyzedLink }) {
   const [open, setOpen] = useState(false);
   const color = link.verdict === "high_risk" ? "var(--risk-high)" : link.verdict === "suspicious" ? "var(--risk-medium)" : "var(--risk-low)";
-  const label = link.verdict === "high_risk" ? "HIGH RISK" : link.verdict === "suspicious" ? "SUSPICIOUS" : "SAFE";
+  const label = link.verdict === "high_risk" ? "HIGH RISK" : link.verdict === "suspicious" ? "SUSPICIOUS" : "NO SIGNS";
 
   return (
     <div style={{ backgroundColor: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: "8px", overflow: "hidden" }}>

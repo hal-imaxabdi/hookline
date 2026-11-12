@@ -62,7 +62,7 @@ function VerdictCard({ verdict, confidence, riskScore, evidence, category, noLin
   const isSafe = verdict === "safe";
   const color = verdict === "high_risk" ? "var(--risk-high)" : verdict === "suspicious" ? "var(--risk-medium)" : "var(--risk-low)";
   const bg = verdict === "high_risk" ? "var(--risk-high-bg)" : verdict === "suspicious" ? "var(--risk-medium-bg)" : "var(--risk-low-bg)";
-  const headline = verdict === "high_risk" ? "HIGH RISK" : verdict === "suspicious" ? "SUSPICIOUS" : "LOOKS SAFE";
+  const headline = verdict === "high_risk" ? "HIGH RISK" : verdict === "suspicious" ? "SUSPICIOUS" : "NO WARNING SIGNS FOUND";
 
   let signals: string[];
   if (isSafe) {
@@ -84,7 +84,7 @@ function VerdictCard({ verdict, confidence, riskScore, evidence, category, noLin
         <VerdictIcon risky={!isSafe} color={color} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: "17px", fontWeight: 700, color }}>{headline}</div>
-          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "1px" }}>Risk score {riskScore}/100 · {confidence} confidence</div>
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "1px" }}>{isSafe ? `Risk score ${riskScore}/100 · Hookline can miss scams, so stay careful` : `Risk score ${riskScore}/100 · ${confidence} confidence`}</div>
         </div>
       </div>
 

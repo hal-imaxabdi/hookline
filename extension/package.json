@@ -2,7 +2,7 @@
   "name": "hookline-extension",
   "version": "2.0.0",
   "private": true,
-  "description": "Hookline — phishing, fake-job and fake-store detection for Gmail and the web",
+  "description": "Hookline \u2014 phishing, fake-job and fake-store detection for Gmail and the web",
   "scripts": {
     "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",
@@ -13,7 +13,8 @@
     "eval:all": "tsx eval/runAll.ts",
     "prepare:allowlist": "tsx eval/prepare/buildAllowlist.ts",
     "prepare:emscad": "tsx eval/prepare/emscad.ts",
-    "rules:doc": "tsx eval/printRules.ts"
+    "rules:doc": "tsx eval/printRules.ts",
+    "build:demo": "node demo/build.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",

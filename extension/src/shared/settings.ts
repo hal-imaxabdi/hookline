@@ -39,7 +39,7 @@ export const DEFAULT_REPORT_LINKS: ReportLink[] = [
 ];
 
 export const DEFAULT_SETTINGS: Settings = {
-  backendEnabled: true,
+  backendEnabled: false,
   sslProbe: false,
   safeBrowsingEnabled: false,
   safeBrowsingApiKey: "",

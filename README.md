@@ -2,13 +2,15 @@
 
 A Chrome extension that spots phishing, fake job offers and fake online stores, in Gmail and on web pages, and tells you **why** something looks risky.
 
-Each result gets a verdict (safe / suspicious / high risk), a scam type (credential phishing, job/internship scam or shopping scam), the reasons behind it, and what to do next.
+Each result gets a verdict (no warning signs found / suspicious / high risk), a scam type (credential phishing, job/internship scam or shopping scam), the reasons behind it, and what to do next.
 
 <p>
 <img src="docs/screenshots/v2-job-scam-summary.png" width="230"/>
 <img src="docs/screenshots/v2-shopping-scam-summary.png" width="230"/>
 <img src="docs/screenshots/v2-phishing-links.png" width="230"/>
 </p>
+
+**Try it without installing:** [web demo](https://hal-imaxabdi.github.io/hookline/demo/). It runs the same rules in your browser and sends nothing anywhere.
 
 ## What it looks for
 
@@ -34,7 +36,7 @@ cd backend
 pip install -r requirements.txt
 uvicorn main:app --host 127.0.0.1 --port 8000
 ```
-Without it, the extension still works using its built-in checks.
+The backend is off by default. After starting it, turn it on in Hookline's Settings. Without it, the extension still works using its built-in checks.
 
 **Tests:** `npm test` in `extension/`, `pytest` in `backend/`.
 
@@ -59,12 +61,12 @@ it was 11.7%. Details in `extension/eval/RESULTS.md`.
 
 ## Limitations
 
-- Hookline misses most phishing URLs (about 75%). A "safe" verdict means
-  no warning signs were found, not that a link is safe.
+- Hookline misses most phishing URLs (about 75%). "No warning signs found"
+  does not mean a link or message is safe.
 - Precision was measured on balanced samples and will be lower in real
   browsing, where phishing is rare.
 - Rules see only the URL and text, so new domains with ordinary names
   pass unnoticed.
-- Gmail extraction was tested on synthetic page markup. Gmail's layout
-  can change without notice.
+- Gmail reading was checked on live Gmail with three synthetic emails.
+  Gmail's layout can change without notice.
 - Datasets are from 2012–2024. Language checks are English-only.

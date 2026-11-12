@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — 2026-11-12
+
+- **Web demo** (`docs/demo/index.html`, built with `npm run build:demo`): the rule engine in a single page with synthetic examples. No network requests.
+- The clean verdict now reads **"No warning signs found"** instead of "Looks safe", and no longer shows a confidence level. Hookline misses most phishing URLs, so it should not call anything safe.
+- The local backend is **off by default**; turn it on in Settings. This removes the "Backend offline" banner for people who never run one.
+- Gmail reading checked on live Gmail with three synthetic emails.
+- Advice text moved to `src/shared/advice.ts` so the demo and the extension share it.
+
 ## 2.0.0 — 2026-11-06
 
 ### Detection
