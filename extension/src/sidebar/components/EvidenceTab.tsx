@@ -94,20 +94,20 @@ function SignalsSection({ title, hint, evidence, muted = false }: { title: strin
       <SectionLabel>{title}</SectionLabel>
       {hint && <p style={{ margin: "0 14px 8px", fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.5 }}>{hint}</p>}
       <div style={{ margin: "0 12px", display: "flex", flexDirection: "column", gap: "6px", opacity: muted ? 0.7 : 1 }}>
-        {sorted.map((item, i) => <SignalRow key={`${item.ruleId}-${i}`} item={item} />)}
+        {sorted.map((item, i) => <SignalRow key={`${item.ruleId}-${i}`} item={item} n={i + 1} />)}
       </div>
     </div>
   );
 }
 
-function SignalRow({ item }: { item: EvidenceItem }) {
+function SignalRow({ item, n }: { item: EvidenceItem; n: number }) {
   const [open, setOpen] = useState(false);
-  const color = item.severity === "high" ? "var(--risk-high)" : item.severity === "medium" ? "var(--risk-medium)" : "var(--text-muted)";
+  const color = item.severity === "high" ? "var(--risk-high)" : item.severity === "medium" ? "var(--risk-medium)" : "var(--brand-blue)";
   const rule = RULES[item.ruleId];
   return (
     <div style={{ backgroundColor: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: "8px", overflow: "hidden" }}>
       <button onClick={() => setOpen(!open)} aria-expanded={open} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "10px", padding: "10px 12px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
-        <span style={{ color, flexShrink: 0, fontSize: "14px", lineHeight: 1.4 }}>✗</span>
+        <span style={{ flexShrink: 0, width: "20px", height: "20px", marginTop: "1px", borderRadius: "99px", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-mono)", fontSize: "11px", fontWeight: 600, color: "#fff", backgroundColor: color }}>{n}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-primary)" }}>{item.title}</div>
           <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px", lineHeight: 1.45 }}>{item.description}</div>
@@ -127,7 +127,7 @@ function SignalRow({ item }: { item: EvidenceItem }) {
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", padding: "14px 14px 6px" }}>{children}</div>;
+  return <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-muted)", padding: "14px 14px 6px" }}>{children}</div>;
 }
 
 function Card({ children }: { children: React.ReactNode }) {

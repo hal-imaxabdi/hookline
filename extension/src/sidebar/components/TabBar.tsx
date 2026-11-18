@@ -87,12 +87,8 @@ export default function TabBar({ activeView, onViewChange, mode, linkCount }: Ta
 function SummaryIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path
-        d="M9 1.5L2 4.75V9C2 12.75 5.1 16.275 9 17.25C12.9 16.275 16 12.75 16 9V4.75L9 1.5Z"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
+      <rect x="2.5" y="2.5" width="13" height="13" rx="3" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5.5 7h7M5.5 10h4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }

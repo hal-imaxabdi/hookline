@@ -4,45 +4,45 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── CSS Variables from Design Tokens ────────────────────────────────────── */
+/* ── Fonts: Geist (SIL OFL), shared with the web demo in demo/fonts ──────── */
+@font-face { font-family: "Geist"; font-weight: 100 900; font-display: swap; src: url("../../demo/fonts/geist-latin-wght-normal.woff2") format("woff2"); }
+@font-face { font-family: "Geist Mono"; font-weight: 100 900; font-display: swap; src: url("../../demo/fonts/geist-mono-latin-wght-normal.woff2") format("woff2"); }
+
+/* ── Design tokens: same 60-30-10 palette as the web demo ─────────────────
+   white / light (60%) · ink navy text (30%) · electric blue accent (10%).
+   Red / amber / green only for verdicts and severity. */
 :root {
-  /* Backgrounds */
-  --bg-base: #0D0E14;
-  --bg-surface: #13141C;
-  --bg-elevated: #1A1B26;
-  --bg-glass: rgba(255, 255, 255, 0.04);
-  --bg-glass-border: rgba(255, 255, 255, 0.08);
+  --bg-base: #F4F6FB;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #EEF1F8;
+  --bg-glass: #FFFFFF;
+  --bg-glass-border: #E1E6F2;
+  --shadow-card: 0 1px 2px rgba(10, 15, 36, 0.04), 0 8px 24px -16px rgba(10, 15, 36, 0.25);
 
-  /* Brand */
-  --brand-purple: #7C5CFC;
-  --brand-purple-light: #9B7FF8;
-  --brand-blue: #4B8BF5;
+  /* Accent (kept under the old variable names the components already use) */
+  --brand-purple: #2F5BFF;
+  --brand-purple-light: #EDF1FF;
+  --brand-blue: #2F5BFF;
+  --ink: #0A0F24;
 
-  /* Risk */
-  --risk-high: #E85454;
-  --risk-high-bg: rgba(232, 84, 84, 0.12);
-  --risk-high-border: rgba(232, 84, 84, 0.25);
-  --risk-medium: #E8A54A;
-  --risk-medium-bg: rgba(232, 165, 74, 0.12);
-  --risk-medium-border: rgba(232, 165, 74, 0.25);
-  --risk-low: #4CAF82;
-  --risk-low-bg: rgba(76, 175, 130, 0.12);
-  --risk-low-border: rgba(76, 175, 130, 0.25);
+  --risk-high: #C92A2A;   --risk-high-bg: #FDEDED;   --risk-high-border: #F5C2C2;
+  --risk-medium: #B45309; --risk-medium-bg: #FFF3DF; --risk-medium-border: #F5D59A;
+  --risk-low: #17692F;    --risk-low-bg: #E7F6EC;    --risk-low-border: #B5E2C3;
 
-  /* Text */
-  --text-primary: #F0F1F5;
-  --text-secondary: #9CA3AF;
-  --text-muted: #6B7280;
+  --text-primary: #0A0F24;
+  --text-secondary: #4B5577;
+  --text-muted: #5F6A88;
 
-  /* Border */
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.10);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-subtle: #E1E6F2;
+  --border-default: #CDD5E8;
+  --border-strong: #AEB9D6;
 
-  /* Typography */
-  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, 'Fira Code', ui-monospace, monospace;
+  --font-ui: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
 }
+
+::selection { background: #2F5BFF; color: #fff; }
+:focus-visible { outline: 2px solid #2F5BFF; outline-offset: 2px; }
 
 /* ── Base Reset ───────────────────────────────────────────────────────────── */
 *,
@@ -95,46 +95,12 @@ body {
   background: var(--border-strong);
 }
 
-/* ── Monospace Values ─────────────────────────────────────────────────────── */
-.mono {
-  font-family: var(--font-mono);
-  font-size: 12px;
-}
-
-/* ── Glass Surface ────────────────────────────────────────────────────────── */
-.glass {
-  background: var(--bg-glass);
-  border: 1px solid var(--bg-glass-border);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
 /* ── Animations ───────────────────────────────────────────────────────────── */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes pulse-subtle {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.6; }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out forwards;
-}
-
 .animate-pulse-subtle {
   animation: pulse-subtle 1.5s ease-in-out infinite;
 }
-
-/* ── Evidence Severity ────────────────────────────────────────────────────── */
-.evidence-high    { color: var(--risk-high); }
-.evidence-medium  { color: var(--risk-medium); }
-.evidence-low     { color: var(--text-secondary); }
-
-/* ── Status Badges ────────────────────────────────────────────────────────── */
-.badge-fail    { color: var(--risk-high); }
-.badge-missing { color: var(--risk-medium); }
-.badge-pass    { color: var(--risk-low); }
-.badge-unknown { color: var(--text-muted); }
