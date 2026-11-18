@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased — 2026-11-12
+## Unreleased — 2026-11-18
+
+- **Scam X-ray** in the web demo: highlights the words that triggered each rule, linked to the numbered warning signs, plus a link anatomy view that compares a look-alike domain character by character with the official one (`demo/xray.ts`). Highlights reuse the rules' own patterns.
+- **Redesign** of the web demo and the extension side panel with a shared look: light 60-30-10 palette, Geist fonts (SIL OFL, bundled locally), a new wordmark and toolbar icon, numbered and colour-coded warning signs, and a risk-score bar. No shield or emoji icons.
+- README rewritten; screenshots replaced with captures from live Gmail (synthetic emails, address blurred).
+- Removed unused CSS classes and the obsolete Tailwind theme.
+
+## 2026-11-12
 
 - **Web demo** (`docs/demo/index.html`, built with `npm run build:demo`): the rule engine in a single page with synthetic examples. No network requests.
 - The clean verdict now reads **"No warning signs found"** instead of "Looks safe", and no longer shows a confidence level. Hookline misses most phishing URLs, so it should not call anything safe.

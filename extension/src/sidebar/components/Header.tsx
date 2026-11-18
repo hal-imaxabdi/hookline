@@ -26,33 +26,9 @@ export default function Header({ onSettings, settingsOpen }: { onSettings: () =>
       }}
     >
       {/* ── Logo + Wordmark + Version ────────────────────────────────────── */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <HooklineIcon />
-        <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
-          <span
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontWeight: 700,
-              fontSize: "14px",
-              letterSpacing: "0.08em",
-              color: "var(--text-primary)",
-              lineHeight: 1,
-            }}
-          >
-            HOOKLINE
-          </span>
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "10px",
-              color: "var(--brand-purple)",
-              letterSpacing: "0.04em",
-              lineHeight: 1,
-            }}
-          >
-            v{HOOKLINE_VERSION}
-          </span>
-        </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+        <Wordmark />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "10.5px", color: "var(--text-muted)" }}>v{HOOKLINE_VERSION}</span>
       </div>
 
       {/* ── Action Icons ─────────────────────────────────────────────────── */}
@@ -106,24 +82,20 @@ function IconButton({
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────────
 
-function HooklineIcon() {
+/** Same wordmark as the web demo: the second "o" is a magnifying glass. */
+function Wordmark() {
   return (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-      <path
-        d="M14 2L4 6.5V13C4 18.5 8.4 23.6 14 25C19.6 23.6 24 18.5 24 13V6.5L14 2Z"
-        fill="var(--brand-purple)"
-        fillOpacity="0.2"
-        stroke="var(--brand-purple)"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M14 9V15M11 12H17"
-        stroke="var(--brand-purple)"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
+    <span
+      aria-label="Hookline"
+      style={{ display: "inline-flex", alignItems: "baseline", fontWeight: 650, fontSize: "19px", letterSpacing: "-0.04em", color: "var(--ink)", lineHeight: 1 }}
+    >
+      <span aria-hidden="true">ho</span>
+      <svg viewBox="0 0 16 16" aria-hidden="true" style={{ width: "0.6em", height: "0.6em", margin: "0 0.04em 0 0.03em", overflow: "visible" }}>
+        <circle cx="7.2" cy="7.2" r="5.6" fill="none" stroke="#2F5BFF" strokeWidth="2.6" />
+        <path d="M11.4 11.4l3.4 3.4" stroke="#2F5BFF" strokeWidth="2.8" strokeLinecap="round" />
+      </svg>
+      <span aria-hidden="true">kline</span>
+    </span>
   );
 }
 

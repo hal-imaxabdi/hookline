@@ -41,6 +41,12 @@ module.exports = (env, argv) => {
           exclude: /node_modules/,
         },
         {
+          // Geist font files referenced from sidebar.css
+          test: /\.woff2$/,
+          type: "asset/resource",
+          generator: { filename: "fonts/[name][ext]" },
+        },
+        {
           test: /\.css$/,
           use: [
             MiniCssExtractPlugin.loader,

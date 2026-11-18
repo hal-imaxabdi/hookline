@@ -89,7 +89,7 @@ export default function SettingsView({ settings }: { settings: Settings }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: "8px", padding: "12px" }}>
-      <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "8px" }}>{title}</div>
+      <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "8px" }}>{title}</div>
       {children}
     </div>
   );

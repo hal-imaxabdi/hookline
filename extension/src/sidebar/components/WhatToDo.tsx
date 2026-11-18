@@ -12,9 +12,15 @@ export default function WhatToDo({ category, verdict, links }: { category: Categ
     <div style={{ margin: "12px 12px 0" }}>
       <div style={label}>What to do</div>
       <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: "8px", padding: "12px" }}>
-        <ul style={{ margin: 0, paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px" }}>
+        <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
           {tips.map((t) => (
-            <li key={t} style={{ fontSize: "12px", lineHeight: 1.5, color: "var(--text-secondary)" }}>{t}</li>
+            <li key={t} style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "12.5px", lineHeight: 1.5, color: "var(--text-primary)" }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0, marginTop: "2px" }}>
+                <rect width="16" height="16" rx="5" fill="var(--brand-purple-light)" />
+                <path d="m4.5 8.2 2.3 2.3 4.7-5" stroke="var(--brand-blue)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span>{t}</span>
+            </li>
           ))}
         </ul>
         {links.length > 0 && (
@@ -34,4 +40,4 @@ export default function WhatToDo({ category, verdict, links }: { category: Categ
   );
 }
 
-const label: React.CSSProperties = { fontSize: "11px", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "8px" };
+const label: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "8px" };
